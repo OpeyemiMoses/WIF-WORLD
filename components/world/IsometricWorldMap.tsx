@@ -1,17 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Compass,
   Grid,
   Layers,
   Maximize2,
   Minus,
-  Pause,
-  Play,
   Plus,
-  RotateCcw,
-  RotateCw,
   Shield,
   Sparkles,
 } from "lucide-react";
@@ -38,66 +34,29 @@ interface IsometricWorldMapProps {
   className?: string;
 }
 
-// Map geometry & projection constants
-const TILE_W = 140;
-const TILE_H = 70;
-const HALF_W = TILE_W / 2; // 70
-const HALF_H = TILE_H / 2; // 35
-const ORIGIN_X = 680;
-const ORIGIN_Y = 175;
-
-// Elevation offsets (in pixels) for 3D terrain height
-function getElevationPx(terrain: TerrainType): number {
+// Elevation (Z height in world units)
+function getElevation(terrain: TerrainType): number {
   switch (terrain) {
     case TerrainType.Water:
-      return 2;
+      return 6;
     case TerrainType.Plains:
-      return 18;
+      return 20;
     case TerrainType.Forest:
-      return 22;
+      return 26;
     case TerrainType.Hills:
-      return 32;
+      return 40;
     case TerrainType.Landmark:
-      return 42;
-    case TerrainType.Rocky:
       return 48;
+    case TerrainType.Rocky:
+      return 62;
     default:
-      return 18;
+      return 20;
   }
 }
 
-// Cardinal rotation angles (0 = South/Front, 1 = West, 2 = North/Back, 3 = East)
-export type RotationAngle = 0 | 1 | 2 | 3;
-
-const ROTATION_NAMES: Record<RotationAngle, { label: string; desc: string; deg: number }> = {
-  0: { label: "South", desc: "Front View", deg: 0 },
-  1: { label: "West", desc: "Western Coast", deg: 90 },
-  2: { label: "North", desc: "The Backside", deg: 180 },
-  3: { label: "East", desc: "Eastern Ridge", deg: 270 },
-};
-
-/**
- * Transforms grid coordinates based on the island rotation angle.
- * Rotation 2 (180°) reveals the complete backside of the island.
- */
-function getRotatedGridCoords(
-  row: number,
-  col: number,
-  rotation: RotationAngle
-): { r: number; c: number } {
-  switch (rotation) {
-    case 0: // 0° (South / Front)
-      return { r: row, c: col };
-    case 1: // 90° (West)
-      return { r: col, c: 6 - row };
-    case 2: // 180° (North / Back)
-      return { r: 6 - row, c: 6 - col };
-    case 3: // 270° (East)
-      return { r: 6 - col, c: row };
-    default:
-      return { r: row, c: col };
-  }
-}
+// Tile size in 3D world space
+const TILE_SIZE = 74;
+const HALF_SIZE = TILE_SIZE / 2;
 
 export function IsometricWorldMap({
   tiles,
@@ -109,1164 +68,947 @@ export function IsometricWorldMap({
   regionName,
   className,
 }: IsometricWorldMapProps) {
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [rotation, setRotation] = useState<RotationAngle>(0);
-  const [isOrbiting, setIsOrbiting] = useState(false);
-  const [hoveredTileId, setHoveredTileId] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Layer toggles
   const [showCoords, setShowCoords] = useState(false);
   const [showBorders, setShowBorders] = useState(true);
   const [showStructures, setShowStructures] = useState(true);
   const [showAtmosphere, setShowAtmosphere] = useState(true);
+  const [hoveredTileId, setHoveredTileId] = useState<number | null>(null);
 
-  const dragRef = useRef<{
-    dragging: boolean;
-    moved: boolean;
-    startX: number;
-    startY: number;
-    originPanX: number;
-    originPanY: number;
-  }>({
-    dragging: false,
-    moved: false,
-    startX: 0,
-    startY: 0,
-    originPanX: 0,
-    originPanY: 0,
+  // 3D Camera & Inertial Physics State
+  const cameraRef = useRef({
+    yaw: 0.785, // ~45 deg initial isometric angle
+    pitch: 0.96, // ~55 deg tilt
+    zoom: 1.05,
+    panX: 0,
+    panY: 20,
+    velYaw: 0,
+    velPitch: 0,
+    velPanX: 0,
+    velPanY: 0,
   });
 
-  // Auto-orbit effect: gently rotates the island to inspect every perspective
-  useEffect(() => {
-    if (!isOrbiting) return;
-    const timer = setInterval(() => {
-      setRotation((prev) => ((prev + 1) % 4) as RotationAngle);
-    }, 4500);
-    return () => clearInterval(timer);
-  }, [isOrbiting]);
-
-  // Painter's algorithm sort: back-to-front depth sorting relative to current camera rotation
-  const sortedTiles = useMemo(() => {
-    return [...tiles].sort((a, b) => {
-      const posA = getRotatedGridCoords(a.row, a.col, rotation);
-      const posB = getRotatedGridCoords(b.row, b.col, rotation);
-      const depthDiff = posA.r + posA.c - (posB.r + posB.c);
-      return depthDiff !== 0 ? depthDiff : posA.r - posB.r;
-    });
-  }, [tiles, rotation]);
-
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest("[data-hud-control]")) return;
-    dragRef.current = {
-      dragging: true,
-      moved: false,
-      startX: e.clientX,
-      startY: e.clientY,
-      originPanX: pan.x,
-      originPanY: pan.y,
-    };
-  };
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragRef.current.dragging) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
-      dragRef.current.moved = true;
-    }
-    setPan({
-      x: Math.max(-420, Math.min(420, dragRef.current.originPanX + dx)),
-      y: Math.max(-300, Math.min(300, dragRef.current.originPanY + dy)),
-    });
-  };
-
-  const handlePointerUp = () => {
-    dragRef.current.dragging = false;
-  };
-
-  const resetCamera = () => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-    setRotation(0);
-  };
-
-  const rotateClockwise = () => {
-    setRotation((prev) => ((prev + 1) % 4) as RotationAngle);
-  };
-
-  const rotateCounterClockwise = () => {
-    setRotation((prev) => ((prev + 3) % 4) as RotationAngle);
-  };
+  // Pointer drag state for swipe momentum
+  const pointerRef = useRef({
+    isDown: false,
+    button: 0,
+    lastX: 0,
+    lastY: 0,
+    startX: 0,
+    startY: 0,
+    lastTime: 0,
+    moved: false,
+  });
 
   const normalizedUser = connectedAddress?.toLowerCase();
 
-  return (
-    <div
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      className={cn(
-        "relative w-full h-full overflow-hidden select-none bg-[#07090A] cursor-grab active:cursor-grabbing",
-        className
-      )}
-    >
-      {/* Dynamic Atmospheric Cosmic Abyss & Nebula Background */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 75% 65% at 50% 52%, rgba(20, 85, 102, 0.32) 0%, rgba(10, 26, 32, 0.55) 45%, rgba(7, 9, 10, 0.98) 85%), radial-gradient(circle at 80% 12%, rgba(230, 57, 70, 0.16), transparent 50%), radial-gradient(circle at 20% 80%, rgba(45, 212, 191, 0.10), transparent 55%)",
-        }}
-      />
+  // Reset Camera
+  const resetCamera = useCallback(() => {
+    cameraRef.current = {
+      yaw: 0.785,
+      pitch: 0.96,
+      zoom: 1.05,
+      panX: 0,
+      panY: 20,
+      velYaw: 0,
+      velPitch: 0,
+      velPanX: 0,
+      velPanY: 0,
+    };
+  }, []);
 
-      {/* Floating Stardust & Ambient Celestial Particles */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:48px_48px] opacity-[0.08]" />
+  // Zoom controls
+  const handleZoom = useCallback((delta: number) => {
+    cameraRef.current.zoom = Math.max(
+      0.55,
+      Math.min(2.4, +(cameraRef.current.zoom + delta).toFixed(2))
+    );
+  }, []);
 
-      {/* Main Pan, Zoom & Animated Rotation Container */}
-      <div
-        className="w-full h-full flex items-center justify-center transition-transform duration-300 ease-out"
-        style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-        }}
-      >
-        <svg
-          viewBox="0 0 1360 880"
-          className="w-full h-full max-w-[1520px] max-h-[960px] overflow-visible"
-          role="img"
-          aria-label="WIF WORLDS Interactive Living Floating Island"
-        >
-          <defs>
-            {/* Shimmering Coastal Lagoon Halo */}
-            <radialGradient id="island-coastal-glow" cx="50%" cy="52%" r="48%">
-              <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.32" />
-              <stop offset="50%" stopColor="#155E75" stopOpacity="0.20" />
-              <stop offset="100%" stopColor="#07090A" stopOpacity="0" />
-            </radialGradient>
+  // Main 60 FPS Render & Inertia Physics Loop
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return;
 
-            {/* Translucent Edge Waterfall Shimmer */}
-            <linearGradient id="waterfall-stream" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#E0F2FE" stopOpacity="0.95" />
-              <stop offset="25%" stopColor="#38BDF8" stopOpacity="0.8" />
-              <stop offset="70%" stopColor="#0284C7" stopOpacity="0.65" />
-              <stop offset="100%" stopColor="#0C4A6E" stopOpacity="0" />
-            </linearGradient>
+    let animId: number;
+    let waterAnim = 0;
 
-            {/* Living Water Surface Top Gradient with Dynamic Depth */}
-            <linearGradient id="top-water" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#38BDF8" />
-              <stop offset="35%" stopColor="#0284C7" />
-              <stop offset="75%" stopColor="#075985" />
-              <stop offset="100%" stopColor="#0C4A6E" />
-            </linearGradient>
+    const render = () => {
+      const container = containerRef.current;
+      if (!container) return;
 
-            {/* Lush Plains Grassland Gradient */}
-            <linearGradient id="top-plains" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#86EFAC" />
-              <stop offset="25%" stopColor="#4ADE80" />
-              <stop offset="70%" stopColor="#22C55E" />
-              <stop offset="100%" stopColor="#15803D" />
-            </linearGradient>
+      const rect = container.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
 
-            {/* Deep Woodland Forest Gradient */}
-            <linearGradient id="top-forest" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#4ADE80" />
-              <stop offset="30%" stopColor="#16A34A" />
-              <stop offset="75%" stopColor="#15803D" />
-              <stop offset="100%" stopColor="#14532D" />
-            </linearGradient>
+      // Handle Retina displays smoothly
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (
+        canvas.width !== Math.floor(width * dpr) ||
+        canvas.height !== Math.floor(height * dpr)
+      ) {
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+      }
 
-            {/* Terraced Rolling Hills Gradient */}
-            <linearGradient id="top-hills" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#A3E635" />
-              <stop offset="40%" stopColor="#65A30D" />
-              <stop offset="80%" stopColor="#4D7C0F" />
-              <stop offset="100%" stopColor="#365314" />
-            </linearGradient>
+      ctx.save();
+      ctx.scale(dpr, dpr);
 
-            {/* Alpine Rocky Peak Gradient */}
-            <linearGradient id="top-rocky" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#94A3B8" />
-              <stop offset="45%" stopColor="#64748B" />
-              <stop offset="80%" stopColor="#475569" />
-              <stop offset="100%" stopColor="#334155" />
-            </linearGradient>
+      // Physics integration (gyro inertia friction deceleration)
+      const cam = cameraRef.current;
+      if (!pointerRef.current.isDown) {
+        cam.yaw += cam.velYaw;
+        cam.pitch = Math.max(0.42, Math.min(1.22, cam.pitch + cam.velPitch));
+        cam.panX += cam.velPanX;
+        cam.panY += cam.velPanY;
 
-            {/* Obsidian Sacred Landmark Gradient */}
-            <linearGradient id="top-landmark" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#991B1B" />
-              <stop offset="45%" stopColor="#581C87" />
-              <stop offset="80%" stopColor="#2E1065" />
-              <stop offset="100%" stopColor="#1E1B4B" />
-            </linearGradient>
+        // Exponential air resistance deceleration
+        cam.velYaw *= 0.925;
+        cam.velPitch *= 0.925;
+        cam.velPanX *= 0.9;
+        cam.velPanY *= 0.9;
 
-            {/* Beacon Spire Cosmic Beam */}
-            <linearGradient id="beacon-beam" x1="0%" y1="100%" x2="0%" y2="0%">
-              <stop offset="0%" stopColor="#FF4D5A" stopOpacity="0.95" />
-              <stop offset="35%" stopColor="#E63946" stopOpacity="0.55" />
-              <stop offset="75%" stopColor="#FF858F" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#FF4D5A" stopOpacity="0" />
-            </linearGradient>
+        if (Math.abs(cam.velYaw) < 0.00008) cam.velYaw = 0;
+        if (Math.abs(cam.velPitch) < 0.00008) cam.velPitch = 0;
+        if (Math.abs(cam.velPanX) < 0.05) cam.velPanX = 0;
+        if (Math.abs(cam.velPanY) < 0.05) cam.velPanY = 0;
+      }
 
-            {/* Floating Island Underside Crags */}
-            <linearGradient id="island-belly-left" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#57534E" />
-              <stop offset="40%" stopColor="#3C3633" />
-              <stop offset="75%" stopColor="#262321" />
-              <stop offset="100%" stopColor="#0F0E0E" />
-            </linearGradient>
+      waterAnim += 0.025;
 
-            <linearGradient id="island-belly-right" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#44403C" />
-              <stop offset="40%" stopColor="#2B2724" />
-              <stop offset="75%" stopColor="#1C1917" />
-              <stop offset="100%" stopColor="#0B0A0A" />
-            </linearGradient>
+      const centerX = width / 2 + cam.panX;
+      const centerY = height / 2 + cam.panY;
+      const cosY = Math.cos(cam.yaw);
+      const sinY = Math.sin(cam.yaw);
+      const sinP = Math.sin(cam.pitch);
+      const cosP = Math.cos(cam.pitch);
+      const zoom = cam.zoom;
 
-            {/* Subterranean Mana Crystals */}
-            <linearGradient id="crystal-crimson" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#FF858F" />
-              <stop offset="50%" stopColor="#E63946" />
-              <stop offset="100%" stopColor="#991B1B" />
-            </linearGradient>
+      // 3D Point Projection Helper
+      const project = (x: number, y: number, z: number) => {
+        const rx = x * cosY - y * sinY;
+        const ry = x * sinY + y * cosY;
+        const sx = centerX + rx * zoom;
+        const sy = centerY + (ry * sinP - z * cosP) * zoom;
+        const depth = ry * cosP + z * sinP;
+        return { sx, sy, depth, rx, ry };
+      };
 
-            <linearGradient id="crystal-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#BAE6FD" />
-              <stop offset="50%" stopColor="#38BDF8" />
-              <stop offset="100%" stopColor="#0284C7" />
-            </linearGradient>
+      // 1. CLEAR & DRAW COSMIC ABYSS BACKDROP
+      const bgGrad = ctx.createRadialGradient(
+        width / 2,
+        height / 2,
+        40,
+        width / 2,
+        height / 2,
+        Math.max(width, height) * 0.7
+      );
+      bgGrad.addColorStop(0, "#0C1D24");
+      bgGrad.addColorStop(0.45, "#081014");
+      bgGrad.addColorStop(0.85, "#060809");
+      bgGrad.addColorStop(1, "#030405");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, width, height);
 
-            {/* Volumetric Clouds Gradient */}
-            <radialGradient id="cloud-puff" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#E2E8F0" stopOpacity="0.45" />
-              <stop offset="65%" stopColor="#94A3B8" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#64748B" stopOpacity="0" />
-            </radialGradient>
+      // Ambient celestial dust particles
+      ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
+      for (let i = 0; i < 40; i++) {
+        const px = ((i * 137.5 + waterAnim * 4) % width);
+        const py = ((i * 219.3 + waterAnim * 2) % height);
+        const pr = (i % 3) * 0.5 + 0.6;
+        ctx.beginPath();
+        ctx.arc(px, py, pr, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
-            {/* Crimson & Gold Magic Glow Filters */}
-            <filter id="crimson-glow" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="5" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
+      // 2. SCULPTED FLOATING ISLAND CRAGGY UNDERSIDE (3D Bedrock)
+      // Base perimeter bedrock contour
+      const underPoints = [
+        { x: -3.4 * TILE_SIZE, y: -3.4 * TILE_SIZE },
+        { x: 3.4 * TILE_SIZE, y: -3.4 * TILE_SIZE },
+        { x: 3.4 * TILE_SIZE, y: 3.4 * TILE_SIZE },
+        { x: -3.4 * TILE_SIZE, y: 3.4 * TILE_SIZE },
+      ];
 
-            <filter id="cyan-glow" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="4" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
+      // Projected bottom edge of island platform
+      const baseEdge = underPoints.map((p) => project(p.x, p.y, -10));
+      // Deep abyssal hanging stalactite tip
+      const deepTip = project(0, 0, -170);
 
-            <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#000" floodOpacity="0.4" />
-            </filter>
-          </defs>
+      // Draw underside crag facets
+      for (let i = 0; i < 4; i++) {
+        const p1 = baseEdge[i];
+        const p2 = baseEdge[(i + 1) % 4];
 
-          {/* ============ BACKGROUND CELESTIAL ENVIRONMENT ============ */}
-          {/* Coastal Turquoise Halo */}
-          <ellipse cx="680" cy="455" rx="580" ry="290" fill="url(#island-coastal-glow)" />
+        const cragGrad = ctx.createLinearGradient(
+          (p1.sx + p2.sx) / 2,
+          (p1.sy + p2.sy) / 2,
+          deepTip.sx,
+          deepTip.sy
+        );
+        cragGrad.addColorStop(0, "#38332E");
+        cragGrad.addColorStop(0.4, "#211E1B");
+        cragGrad.addColorStop(0.8, "#12100F");
+        cragGrad.addColorStop(1, "#080706");
 
-          {/* Orbiting Floating Satellite Boulders (Weightless Debris) */}
-          <g opacity="0.85" pointerEvents="none">
-            {/* Satellite Boulder 1 (Top Left) */}
-            <g transform="translate(160, 220)">
-              <polygon points="0,15 25,0 45,18 20,32" fill="#44403C" />
-              <polygon points="0,15 20,32 18,48 5,38" fill="#292524" />
-              <polygon points="45,18 20,32 18,48 40,38" fill="#1C1917" />
-              <ellipse cx="22" cy="14" rx="14" ry="7" fill="#4ADE80" opacity="0.8" />
-              {/* Mini pine tree on floating rock */}
-              <polygon points="22,2 26,12 18,12" fill="#14532D" />
-              <polygon points="22,-4 25,4 19,4" fill="#22C55E" />
-              {/* Dangling roots */}
-              <path d="M15,42 Q12,58 18,70" stroke="#78716C" strokeWidth="1.2" fill="none" />
-              <path d="M25,44 Q28,62 24,74" stroke="#57534E" strokeWidth="1" fill="none" />
-            </g>
+        ctx.fillStyle = cragGrad;
+        ctx.beginPath();
+        ctx.moveTo(p1.sx, p1.sy);
+        ctx.lineTo(p2.sx, p2.sy);
+        ctx.lineTo(deepTip.sx, deepTip.sy);
+        ctx.closePath();
+        ctx.fill();
 
-            {/* Satellite Boulder 2 (Top Right) */}
-            <g transform="translate(1140, 240)">
-              <polygon points="0,18 28,0 52,16 26,35" fill="#475569" />
-              <polygon points="0,18 26,35 24,52 6,42" fill="#334155" />
-              <polygon points="52,16 26,35 24,52 46,40" fill="#1E293B" />
-              <polygon points="26,6 30,18 22,18" fill="url(#crystal-cyan)" filter="url(#cyan-glow)" />
-              <path d="M22,46 Q26,65 20,80" stroke="#64748B" strokeWidth="1.2" fill="none" />
-            </g>
+        ctx.strokeStyle = "rgba(0,0,0,0.5)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
 
-            {/* Satellite Boulder 3 (Bottom Left Abyss) */}
-            <g transform="translate(210, 640)">
-              <polygon points="0,12 20,0 38,14 18,28" fill="#3C3633" />
-              <polygon points="0,12 18,28 16,40 4,32" fill="#242120" />
-              <polygon points="38,14 18,28 16,40 34,30" fill="#151413" />
-              <circle cx="18" cy="14" r="3" fill="#FF4D5A" filter="url(#crimson-glow)" />
-            </g>
+      // Dangling ancient roots from underside
+      ctx.strokeStyle = "#44403C";
+      ctx.lineWidth = 1.6 * zoom;
+      ctx.beginPath();
+      const r1 = project(-100, 80, -20);
+      const r1_end = project(-110, 90, -110);
+      ctx.moveTo(r1.sx, r1.sy);
+      ctx.quadraticCurveTo(r1.sx + 15, r1.sy + 40, r1_end.sx, r1_end.sy);
+      const r2 = project(80, -60, -20);
+      const r2_end = project(95, -70, -120);
+      ctx.moveTo(r2.sx, r2.sy);
+      ctx.quadraticCurveTo(r2.sx - 10, r2.sy + 50, r2_end.sx, r2_end.sy);
+      ctx.stroke();
 
-            {/* Satellite Boulder 4 (Bottom Right Abyss) */}
-            <g transform="translate(1110, 620)">
-              <polygon points="0,14 24,0 42,16 20,30" fill="#44403C" />
-              <polygon points="0,14 20,30 18,44 6,35" fill="#292524" />
-              <polygon points="42,16 20,30 18,44 38,34" fill="#1C1917" />
-              <path d="M18,38 Q22,55 16,68" stroke="#78716C" strokeWidth="1" fill="none" />
-            </g>
-          </g>
+      // Subterranean glowing crystals (crimson & cyan)
+      const c1 = project(-50, 40, -90);
+      ctx.fillStyle = "#FF4D5A";
+      ctx.shadowColor = "#FF4D5A";
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(c1.sx, c1.sy, 3.5 * zoom, 0, Math.PI * 2);
+      ctx.fill();
 
-          {/* ============ SCULPTED FLOATING ISLAND CRAGGY UNDERSIDE ============ */}
-          {/* Massive subterranean rock underbelly anchoring the 7x7 grid */}
-          <g pointerEvents="none">
-            {/* Left Underside Megalith Flank */}
-            <polygon
-              points="190,420 680,670 680,820 520,740 380,660 270,560 190,460"
-              fill="url(#island-belly-left)"
-            />
-            {/* Right Underside Megalith Flank */}
-            <polygon
-              points="1170,420 680,670 680,820 830,735 970,655 1080,555 1170,460"
-              fill="url(#island-belly-right)"
-            />
+      const c2 = project(60, 50, -80);
+      ctx.fillStyle = "#38BDF8";
+      ctx.shadowColor = "#38BDF8";
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(c2.sx, c2.sy, 3.5 * zoom, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0; // reset shadow
 
-            {/* Central Abyssal Stalactite Keel (Deepest Hanging Peak) */}
-            <polygon points="610,630 680,670 675,835 640,780" fill="#1C1917" />
-            <polygon points="680,670 750,630 710,775 675,835" fill="#0C0A0A" />
+      // 3. TRANSFORM & DEPTH SORT ALL 49 TILES
+      interface ProjectedTile {
+        tile: TileState;
+        topCenter: { sx: number; sy: number; depth: number };
+        corners: { sx: number; sy: number }[];
+        bottomCorners: { sx: number; sy: number }[];
+        elev: number;
+        isSelected: boolean;
+        isHovered: boolean;
+        isYours: boolean;
+        isOther: boolean;
+      }
 
-            {/* Jagged Faceted Stalactite Spikes */}
-            <polygon points="380,530 460,570 420,700 370,620" fill="#262321" opacity="0.95" />
-            <polygon points="460,570 540,610 510,740 420,700" fill="#171514" opacity="0.95" />
-            <polygon points="820,610 900,570 850,695 780,735" fill="#201D1B" opacity="0.95" />
-            <polygon points="900,570 980,530 940,640 850,695" fill="#131211" opacity="0.95" />
+      const projectedTiles: ProjectedTile[] = tiles.map((tile) => {
+        // World position
+        const wx = (tile.col - 3) * TILE_SIZE;
+        const wy = (tile.row - 3) * TILE_SIZE;
+        const elev = getElevation(tile.terrain);
 
-            {/* Subterranean Mana Crystal Clusters Embedded in the Underside Rock */}
-            {/* Crimson Crystals */}
-            <polygon points="450,610 460,590 468,612 458,624" fill="url(#crystal-crimson)" filter="url(#crimson-glow)" />
-            <polygon points="465,605 478,582 485,608 472,618" fill="url(#crystal-crimson)" filter="url(#crimson-glow)" />
-            <polygon points="650,710 662,685 670,715 658,728" fill="url(#crystal-crimson)" filter="url(#crimson-glow)" />
+        const isSelected = tile.id === selectedTileId;
+        const isHovered = tile.id === hoveredTileId;
+        const lift = isSelected ? 12 : isHovered ? 6 : 0;
+        const z = elev + lift;
 
-            {/* Cyan Crystals */}
-            <polygon points="880,600 892,578 900,602 888,614" fill="url(#crystal-cyan)" filter="url(#cyan-glow)" />
-            <polygon points="898,595 910,570 918,598 906,610" fill="url(#crystal-cyan)" filter="url(#cyan-glow)" />
-            <polygon points="705,715 718,688 726,720 714,732" fill="url(#crystal-cyan)" filter="url(#cyan-glow)" />
+        const topCenter = project(wx, wy, z);
 
-            {/* Twisted Hanging Ancient Roots dangling into empty space */}
-            <path d="M310,520 Q330,620 290,710 Q280,740 295,780" stroke="#57534E" strokeWidth="2.5" fill="none" />
-            <path d="M330,530 Q350,640 335,720" stroke="#44403C" strokeWidth="1.8" fill="none" />
-            <path d="M570,640 Q550,730 580,810 Q590,830 575,860" stroke="#78716C" strokeWidth="2.2" fill="none" />
-            <path d="M780,640 Q810,720 790,795 Q785,820 805,850" stroke="#57534E" strokeWidth="2" fill="none" />
-            <path d="M1030,520 Q1010,610 1040,690 Q1050,720 1035,760" stroke="#44403C" strokeWidth="2.2" fill="none" />
-          </g>
+        // 4 diamond corners in world space
+        const corners = [
+          project(wx, wy - HALF_SIZE, z), // North
+          project(wx + HALF_SIZE, wy, z), // East
+          project(wx, wy + HALF_SIZE, z), // South
+          project(wx - HALF_SIZE, wy, z), // West
+        ];
 
-          {/* ============ 49 INTERACTIVE ISOMETRIC TILES ============ */}
-          {sortedTiles.map((tile) => {
-            const rotPos = getRotatedGridCoords(tile.row, tile.col, rotation);
-            const baseX = ORIGIN_X + (rotPos.c - rotPos.r) * HALF_W;
-            const baseY = ORIGIN_Y + (rotPos.c + rotPos.r) * HALF_H;
-            const elev = getElevationPx(tile.terrain);
+        // Bottom cliff corners (down by cliff depth 22)
+        const bottomCorners = [
+          project(wx, wy - HALF_SIZE, z - 22),
+          project(wx + HALF_SIZE, wy, z - 22),
+          project(wx, wy + HALF_SIZE, z - 22),
+          project(wx - HALF_SIZE, wy, z - 22),
+        ];
 
-            const isSelected = tile.id === selectedTileId;
-            const isHovered = tile.id === hoveredTileId;
-            const liftY = isSelected ? -10 : isHovered ? -5 : 0;
+        const isUnowned =
+          !tile.owner || tile.owner.toLowerCase() === ZERO_ADDRESS;
+        const isYours =
+          !isUnowned &&
+          Boolean(normalizedUser) &&
+          tile.owner.toLowerCase() === normalizedUser;
+        const isOther = !isUnowned && !isYours;
 
-            const topY = baseY - elev + liftY;
-            const bottomWallY = baseY + 18;
+        return {
+          tile,
+          topCenter,
+          corners,
+          bottomCorners,
+          elev,
+          isSelected,
+          isHovered,
+          isYours,
+          isOther,
+        };
+      });
 
-            const isUnowned =
-              !tile.owner || tile.owner.toLowerCase() === ZERO_ADDRESS;
-            const isYours =
-              !isUnowned &&
-              Boolean(normalizedUser) &&
-              tile.owner.toLowerCase() === normalizedUser;
-            const isOtherPlayer = !isUnowned && !isYours;
+      // Sort back-to-front by depth (Painter's algorithm in continuous 3D)
+      projectedTiles.sort((a, b) => a.topCenter.depth - b.topCenter.depth);
 
-            const topFill =
-              tile.terrain === TerrainType.Plains
-                ? "url(#top-plains)"
-                : tile.terrain === TerrainType.Forest
-                ? "url(#top-forest)"
-                : tile.terrain === TerrainType.Hills
-                ? "url(#top-hills)"
-                : tile.terrain === TerrainType.Rocky
-                ? "url(#top-rocky)"
-                : tile.terrain === TerrainType.Water
-                ? "url(#top-water)"
-                : "url(#top-landmark)";
+      // 4. DRAW SORTED TILES WITH PHOTOREALISTIC NATURAL ASSETS
+      for (const pt of projectedTiles) {
+        const {
+          tile,
+          topCenter,
+          corners,
+          bottomCorners,
+          isSelected,
+          isHovered,
+          isYours,
+          isOther,
+        } = pt;
 
-            // 3D Cliff Wall Lighting
-            const leftCliffColor =
-              tile.terrain === TerrainType.Water
-                ? "#0284C7"
-                : tile.terrain === TerrainType.Rocky
-                ? "#64748B"
-                : tile.terrain === TerrainType.Landmark
-                ? "#581C87"
-                : "#65A30D";
+        // A. 3D Cliff Walls (drawn before top surface)
+        for (let i = 0; i < 4; i++) {
+          const cA = corners[i];
+          const cB = corners[(i + 1) % 4];
+          const bA = bottomCorners[i];
+          const bB = bottomCorners[(i + 1) % 4];
 
-            const rightCliffColor =
+          // Face normal test to only draw facing cliff sides
+          const cross =
+            (cB.sx - cA.sx) * (bA.sy - cA.sy) -
+            (cB.sy - cA.sy) * (bA.sx - cA.sx);
+          if (cross > 0) {
+            ctx.fillStyle =
               tile.terrain === TerrainType.Water
                 ? "#075985"
                 : tile.terrain === TerrainType.Rocky
                 ? "#475569"
                 : tile.terrain === TerrainType.Landmark
                 ? "#3B0764"
-                : "#4D7C0F";
+                : "#4A4036";
+            ctx.beginPath();
+            ctx.moveTo(cA.sx, cA.sy);
+            ctx.lineTo(cB.sx, cB.sy);
+            ctx.lineTo(bB.sx, bB.sy);
+            ctx.lineTo(bA.sx, bA.sy);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "rgba(0,0,0,0.3)";
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
 
-            let borderStroke = "rgba(15, 23, 42, 0.45)";
-            let borderWidth = 1.2;
+        // B. Top Diamond Surface
+        ctx.beginPath();
+        ctx.moveTo(corners[0].sx, corners[0].sy);
+        for (let i = 1; i < 4; i++) {
+          ctx.lineTo(corners[i].sx, corners[i].sy);
+        }
+        ctx.closePath();
 
-            if (isSelected) {
-              borderStroke = "#FFD166";
-              borderWidth = 3.2;
-            } else if (isHovered) {
-              borderStroke = "#F8FAFC";
-              borderWidth = 2.2;
-            } else if (showBorders && isYours) {
-              borderStroke = "#2DD4BF";
-              borderWidth = 2.8;
-            } else if (showBorders && isOtherPlayer) {
-              borderStroke = "#FF4D5A";
-              borderWidth = 2.8;
-            } else if (tile.id === BEACON_TARGET_TILE_ID) {
-              borderStroke = "#E63946";
-              borderWidth = 2.5;
-            }
+        // Realistic Terrain Surface Gradients
+        if (tile.terrain === TerrainType.Plains) {
+          const grad = ctx.createLinearGradient(
+            corners[0].sx,
+            corners[0].sy,
+            corners[2].sx,
+            corners[2].sy
+          );
+          grad.addColorStop(0, "#86EFAC");
+          grad.addColorStop(0.5, "#4ADE80");
+          grad.addColorStop(1, "#16A34A");
+          ctx.fillStyle = grad;
+        } else if (tile.terrain === TerrainType.Forest) {
+          const grad = ctx.createLinearGradient(
+            corners[0].sx,
+            corners[0].sy,
+            corners[2].sx,
+            corners[2].sy
+          );
+          grad.addColorStop(0, "#22C55E");
+          grad.addColorStop(0.5, "#15803D");
+          grad.addColorStop(1, "#14532D");
+          ctx.fillStyle = grad;
+        } else if (tile.terrain === TerrainType.Hills) {
+          const grad = ctx.createLinearGradient(
+            corners[0].sx,
+            corners[0].sy,
+            corners[2].sx,
+            corners[2].sy
+          );
+          grad.addColorStop(0, "#A3E635");
+          grad.addColorStop(0.5, "#65A30D");
+          grad.addColorStop(1, "#3F6212");
+          ctx.fillStyle = grad;
+        } else if (tile.terrain === TerrainType.Rocky) {
+          const grad = ctx.createLinearGradient(
+            corners[0].sx,
+            corners[0].sy,
+            corners[2].sx,
+            corners[2].sy
+          );
+          grad.addColorStop(0, "#94A3B8");
+          grad.addColorStop(0.5, "#64748B");
+          grad.addColorStop(1, "#334155");
+          ctx.fillStyle = grad;
+        } else if (tile.terrain === TerrainType.Water) {
+          const grad = ctx.createLinearGradient(
+            corners[0].sx,
+            corners[0].sy,
+            corners[2].sx,
+            corners[2].sy
+          );
+          grad.addColorStop(0, "#38BDF8");
+          grad.addColorStop(0.4, "#0284C7");
+          grad.addColorStop(1, "#0369A1");
+          ctx.fillStyle = grad;
+        } else {
+          // Landmark
+          const grad = ctx.createLinearGradient(
+            corners[0].sx,
+            corners[0].sy,
+            corners[2].sx,
+            corners[2].sy
+          );
+          grad.addColorStop(0, "#991B1B");
+          grad.addColorStop(0.6, "#581C87");
+          grad.addColorStop(1, "#1E1B4B");
+          ctx.fillStyle = grad;
+        }
+        ctx.fill();
 
-            // Edge detection for waterfalls (perimeter water tiles)
-            const isPerimeter =
-              rotPos.r === 0 || rotPos.c === 0 || rotPos.r === 6 || rotPos.c === 6;
-            const hasWaterfall =
-              tile.terrain === TerrainType.Water &&
-              (rotPos.r === 6 || rotPos.c === 0);
+        // Territory / Hover / Selection Border
+        if (isSelected) {
+          ctx.strokeStyle = "#FFD166";
+          ctx.lineWidth = 3 * zoom;
+          ctx.stroke();
+        } else if (isHovered) {
+          ctx.strokeStyle = "#F8FAFC";
+          ctx.lineWidth = 2 * zoom;
+          ctx.stroke();
+        } else if (showBorders && isYours) {
+          ctx.strokeStyle = "#2DD4BF";
+          ctx.lineWidth = 2.4 * zoom;
+          ctx.stroke();
+        } else if (showBorders && isOther) {
+          ctx.strokeStyle = "#FF4D5A";
+          ctx.lineWidth = 2.4 * zoom;
+          ctx.stroke();
+        } else {
+          ctx.strokeStyle = "rgba(15, 23, 42, 0.4)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
 
-            // Deterministic hash seed per tile for natural variation
-            const seed = (tile.id * 37 + tile.row * 13 + tile.col * 7) % 100;
-            const variant = seed % 3;
+        // C. REALISTIC SCENERY ASSETS
+        const cx = topCenter.sx;
+        const cy = topCenter.sy;
 
-            return (
-              <g
-                key={tile.id}
-                onClick={() => {
-                  if (!dragRef.current.moved) {
-                    onSelectTile(tile.id);
-                  }
-                }}
-                onMouseEnter={() => setHoveredTileId(tile.id)}
-                onMouseLeave={() =>
-                  setHoveredTileId((prev) => (prev === tile.id ? null : prev))
-                }
-                className="cursor-pointer transition-opacity"
-              >
-                {/* 3D Isometric Cliff Left Wall */}
-                <polygon
-                  points={`${baseX - HALF_W},${topY + HALF_H} ${baseX},${
-                    topY + TILE_H
-                  } ${baseX},${bottomWallY + TILE_H} ${baseX - HALF_W},${
-                    bottomWallY + HALF_H
-                  }`}
-                  fill={leftCliffColor}
-                  stroke="rgba(0,0,0,0.35)"
-                  strokeWidth="0.8"
-                />
+        // --- 1. WATER RIPPLES & SPECULAR HIGHLIGHTS ---
+        if (tile.terrain === TerrainType.Water) {
+          ctx.strokeStyle = "rgba(224, 242, 254, 0.65)";
+          ctx.lineWidth = 1.5 * zoom;
+          ctx.beginPath();
+          const waveOff = Math.sin(waterAnim + tile.id) * 3 * zoom;
+          ctx.moveTo(cx - 16 * zoom, cy - 2 * zoom + waveOff);
+          ctx.quadraticCurveTo(
+            cx,
+            cy - 6 * zoom + waveOff,
+            cx + 16 * zoom,
+            cy - 2 * zoom + waveOff
+          );
+          ctx.stroke();
+        }
 
-                {/* 3D Isometric Cliff Right Wall */}
-                <polygon
-                  points={`${baseX + HALF_W},${topY + HALF_H} ${baseX},${
-                    topY + TILE_H
-                  } ${baseX},${bottomWallY + TILE_H} ${baseX + HALF_W},${
-                    bottomWallY + HALF_H
-                  }`}
-                  fill={rightCliffColor}
-                  stroke="rgba(0,0,0,0.4)"
-                  strokeWidth="0.8"
-                />
+        // --- 2. DENSE REALISTIC 3D WOODLAND TREES ---
+        if (tile.terrain === TerrainType.Forest && !tile.hasSettlement) {
+          const drawPine = (ox: number, oy: number, scale: number) => {
+            const tx = cx + ox * zoom;
+            const ty = cy + oy * zoom;
+            const s = scale * zoom;
 
-                {/* Top Diamond Surface */}
-                <polygon
-                  points={`${baseX},${topY} ${baseX + HALF_W},${topY + HALF_H} ${baseX},${
-                    topY + TILE_H
-                  } ${baseX - HALF_W},${topY + HALF_H}`}
-                  fill={topFill}
-                  stroke={borderStroke}
-                  strokeWidth={borderWidth}
-                />
+            // Trunk
+            ctx.fillStyle = "#451A03";
+            ctx.fillRect(tx - 1.5 * s, ty, 3 * s, 6 * s);
 
-                {/* Dynamic Edge Waterfall cascading into the void */}
-                {hasWaterfall && (
-                  <g pointerEvents="none">
-                    {/* Water pouring over the cliff crest */}
-                    <path
-                      d={`M${baseX - 30},${topY + TILE_H - 12} L${baseX + 10},${
-                        topY + TILE_H - 12
-                      } L${baseX + 6},${topY + TILE_H + 90} L${baseX - 26},${
-                        topY + TILE_H + 90
-                      } Z`}
-                      fill="url(#waterfall-stream)"
-                      opacity="0.88"
-                    />
-                    {/* Secondary foaming spray stream */}
-                    <path
-                      d={`M${baseX - 22},${topY + TILE_H - 8} L${baseX - 4},${
-                        topY + TILE_H - 8
-                      } L${baseX - 6},${topY + TILE_H + 110} L${baseX - 20},${
-                        topY + TILE_H + 110
-                      } Z`}
-                      fill="#FFFFFF"
-                      opacity="0.65"
-                    />
-                    {/* Spray Mist Cloudlets at bottom of waterfall */}
-                    <ellipse
-                      cx={baseX - 10}
-                      cy={topY + TILE_H + 95}
-                      rx="22"
-                      ry="8"
-                      fill="#BAE6FD"
-                      opacity="0.55"
-                      filter="url(#cyan-glow)"
-                    />
-                    <ellipse
-                      cx={baseX - 6}
-                      cy={topY + TILE_H + 105}
-                      rx="26"
-                      ry="9"
-                      fill="#E0F2FE"
-                      opacity="0.4"
-                    />
-                  </g>
-                )}
+            // Tiered Pine Foliage
+            // Tier 1 (bottom)
+            ctx.fillStyle = "#14532D";
+            ctx.beginPath();
+            ctx.moveTo(tx, ty - 14 * s);
+            ctx.lineTo(tx + 8 * s, ty);
+            ctx.lineTo(tx - 8 * s, ty);
+            ctx.closePath();
+            ctx.fill();
 
-                {/* Ownership Territory Inner Glow Diamond */}
-                {showBorders && (isYours || isOtherPlayer) && (
-                  <polygon
-                    points={`${baseX},${topY + 5} ${baseX + HALF_W - 9},${
-                      topY + HALF_H
-                    } ${baseX},${topY + TILE_H - 5} ${baseX - HALF_W + 9},${
-                      topY + HALF_H
-                    }`}
-                    fill={
-                      isYours
-                        ? "rgba(45, 212, 191, 0.15)"
-                        : "rgba(230, 57, 70, 0.18)"
-                    }
-                    stroke={isYours ? "#2DD4BF" : "#E63946"}
-                    strokeWidth="1.4"
-                    strokeOpacity="0.85"
-                    pointerEvents="none"
-                  />
-                )}
+            // Tier 2 (middle lit side)
+            ctx.fillStyle = "#16A34A";
+            ctx.beginPath();
+            ctx.moveTo(tx, ty - 18 * s);
+            ctx.lineTo(tx + 6 * s, ty - 5 * s);
+            ctx.lineTo(tx - 6 * s, ty - 5 * s);
+            ctx.closePath();
+            ctx.fill();
 
-                {/* Selected Tile Beacon Highlight Ring */}
-                {isSelected && (
-                  <polygon
-                    points={`${baseX},${topY - 4} ${baseX + HALF_W + 5},${
-                      topY + HALF_H
-                    } ${baseX},${topY + TILE_H + 4} ${baseX - HALF_W - 5},${
-                      topY + HALF_H
-                    }`}
-                    fill="none"
-                    stroke="#FFD166"
-                    strokeWidth="2.5"
-                    filter="url(#crimson-glow)"
-                    pointerEvents="none"
-                  />
-                )}
+            // Tier 3 (top peak)
+            ctx.fillStyle = "#22C55E";
+            ctx.beginPath();
+            ctx.moveTo(tx, ty - 22 * s);
+            ctx.lineTo(tx + 4 * s, ty - 10 * s);
+            ctx.lineTo(tx - 4 * s, ty - 10 * s);
+            ctx.closePath();
+            ctx.fill();
+          };
 
-                {/* ============ NATURAL TERRAIN SCENERY ============ */}
+          drawPine(-14, 4, 1.1);
+          drawPine(12, 6, 1.0);
+          drawPine(0, -8, 1.25);
+          drawPine(-6, 12, 0.85);
+        }
 
-                {/* 1. ACTUAL WATER (Wave Caustics, Shorelines & Shimmer) */}
-                {tile.terrain === TerrainType.Water && (
-                  <g pointerEvents="none">
-                    {/* Concentric wave caustics */}
-                    <path
-                      d={`M${baseX - 32},${topY + 34} Q${baseX - 10},${
-                        topY + 28
-                      } ${baseX + 12},${topY + 34} T${baseX + 34},${topY + 34}`}
-                      stroke="#BAE6FD"
-                      strokeWidth="1.6"
-                      strokeOpacity="0.75"
-                      fill="none"
-                    />
-                    <path
-                      d={`M${baseX - 22},${topY + 44} Q${baseX},${
-                        topY + 38
-                      } ${baseX + 24},${topY + 44}`}
-                      stroke="#E0F2FE"
-                      strokeWidth="1.3"
-                      strokeOpacity="0.6"
-                      fill="none"
-                    />
-                    {/* Water sunbeam glint */}
-                    <circle
-                      cx={baseX - 4 + variant * 8}
-                      cy={topY + 32}
-                      r="2"
-                      fill="#FFFFFF"
-                      opacity="0.85"
-                    />
-                  </g>
-                )}
+        // --- 3. MAJESTIC CRAGGY MOUNTAINS WITH SNOW CAPS ---
+        if (tile.terrain === TerrainType.Rocky && !tile.hasSettlement) {
+          const peakH = 34 * zoom;
+          const peakX = cx;
+          const peakY = cy - peakH;
 
-                {/* 2. PLAINS (Lush Meadows, Cobblestone Footpath & Wildflowers) */}
-                {tile.terrain === TerrainType.Plains && !tile.hasSettlement && (
-                  <g pointerEvents="none">
-                    {/* Winding dirt/cobble footpath */}
-                    <path
-                      d={`M${baseX - 28},${topY + 36} Q${baseX - 4},${
-                        topY + 28
-                      } ${baseX + 26},${topY + 38}`}
-                      stroke="#A16207"
-                      strokeWidth="2.5"
-                      strokeOpacity="0.45"
-                      fill="none"
-                      strokeLinecap="round"
-                    />
-                    {/* Grazing stone boulders */}
-                    <ellipse
-                      cx={baseX + 18}
-                      cy={topY + 40}
-                      rx="4.5"
-                      ry="2.5"
-                      fill="#78716C"
-                    />
-                    <ellipse
-                      cx={baseX - 16}
-                      cy={topY + 26}
-                      rx="3.5"
-                      ry="2"
-                      fill="#A8A29E"
-                    />
-                    {/* Wildflower blooms */}
-                    <circle cx={baseX - 8} cy={topY + 38} r="1.5" fill="#FEF08A" />
-                    <circle cx={baseX + 6} cy={topY + 24} r="1.5" fill="#F43F5E" />
-                    <circle cx={baseX + 12} cy={topY + 32} r="1.5" fill="#38BDF8" />
-                  </g>
-                )}
+          // Main shadow facet
+          ctx.fillStyle = "#334155";
+          ctx.beginPath();
+          ctx.moveTo(peakX, peakY);
+          ctx.lineTo(cx + 18 * zoom, cy + 8 * zoom);
+          ctx.lineTo(cx - 2 * zoom, cy + 10 * zoom);
+          ctx.closePath();
+          ctx.fill();
 
-                {/* 3. LUSH WOODLAND FOREST (Multi-tiered 3D Pine & Oak Trees) */}
-                {tile.terrain === TerrainType.Forest && !tile.hasSettlement && (
-                  <g pointerEvents="none">
-                    {/* Tree 1: Background Pine (Left) */}
-                    <g transform={`translate(${baseX - 22}, ${topY + 8})`}>
-                      <rect x="7" y="18" width="3" height="6" fill="#451A03" />
-                      <polygon points="8.5,0 17,16 0,16" fill="#14532D" />
-                      <polygon points="8.5,0 8.5,16 17,16" fill="#052E16" />
-                      <polygon points="8.5,-4 15,9 2,9" fill="#16A34A" />
-                      <polygon points="8.5,-4 8.5,9 15,9" fill="#14532D" />
-                    </g>
+          // Main lit facet
+          ctx.fillStyle = "#94A3B8";
+          ctx.beginPath();
+          ctx.moveTo(peakX, peakY);
+          ctx.lineTo(cx - 20 * zoom, cy + 6 * zoom);
+          ctx.lineTo(cx - 2 * zoom, cy + 10 * zoom);
+          ctx.closePath();
+          ctx.fill();
 
-                    {/* Tree 2: Deep Woodland Oak (Center Back) */}
-                    <g transform={`translate(${baseX - 6}, ${topY - 2})`}>
-                      <rect x="7" y="20" width="4" height="8" fill="#5A2E0F" />
-                      {/* Fluffy leafy canopy */}
-                      <circle cx="9" cy="12" r="11" fill="#15803D" />
-                      <circle cx="5" cy="8" r="8" fill="#22C55E" />
-                      <circle cx="12" cy="7" r="7.5" fill="#4ADE80" opacity="0.9" />
-                    </g>
+          // Brilliant Glacier Snow Cap
+          ctx.fillStyle = "#F8FAFC";
+          ctx.beginPath();
+          ctx.moveTo(peakX, peakY);
+          ctx.lineTo(peakX + 7 * zoom, peakY + 12 * zoom);
+          ctx.lineTo(peakX - 1 * zoom, peakY + 10 * zoom);
+          ctx.lineTo(peakX - 8 * zoom, peakY + 14 * zoom);
+          ctx.closePath();
+          ctx.fill();
 
-                    {/* Tree 3: Foreground Hero Conifer (Right) */}
-                    <g transform={`translate(${baseX + 12}, ${topY + 12})`}>
-                      <rect x="8" y="20" width="3.5" height="7" fill="#451A03" />
-                      <polygon points="9.5,0 19,18 0,18" fill="#166534" />
-                      <polygon points="9.5,0 9.5,18 19,18" fill="#14532D" />
-                      <polygon points="9.5,-5 17,10 2,10" fill="#22C55E" />
-                      <polygon points="9.5,-5 9.5,10 17,10" fill="#15803D" />
-                      <polygon points="9.5,-9 15,3 4,3" fill="#4ADE80" />
-                    </g>
+          // Secondary flanking peak
+          ctx.fillStyle = "#64748B";
+          ctx.beginPath();
+          ctx.moveTo(cx - 14 * zoom, cy - 14 * zoom);
+          ctx.lineTo(cx - 24 * zoom, cy + 8 * zoom);
+          ctx.lineTo(cx - 4 * zoom, cy + 8 * zoom);
+          ctx.closePath();
+          ctx.fill();
+        }
 
-                    {/* Tree 4: Small Sapling (Front Center) */}
-                    <g transform={`translate(${baseX - 6}, ${topY + 22})`}>
-                      <rect x="5" y="12" width="2" height="4" fill="#451A03" />
-                      <polygon points="6,2 12,12 0,12" fill="#22C55E" />
-                      <polygon points="6,2 6,12 12,12" fill="#15803D" />
-                    </g>
+        // --- 4. ROLLING HILLS ---
+        if (tile.terrain === TerrainType.Hills && !tile.hasSettlement) {
+          ctx.fillStyle = "#65A30D";
+          ctx.beginPath();
+          ctx.arc(cx - 6 * zoom, cy + 2 * zoom, 12 * zoom, Math.PI, 0);
+          ctx.fill();
 
-                    {/* Red fly-agaric forest mushroom */}
-                    <circle cx={baseX + 4} cy={topY + 44} r="2" fill="#EF4444" />
-                    <circle cx={baseX + 4} cy={topY + 43} r="0.6" fill="#FFFFFF" />
-                  </g>
-                )}
+          ctx.fillStyle = "#84CC16";
+          ctx.beginPath();
+          ctx.arc(cx + 8 * zoom, cy + 4 * zoom, 10 * zoom, Math.PI, 0);
+          ctx.fill();
+        }
 
-                {/* 4. ROLLING HILLS (Terraced Contours & Sheep/Pasture) */}
-                {tile.terrain === TerrainType.Hills && !tile.hasSettlement && (
-                  <g pointerEvents="none">
-                    {/* Primary Green Hill Knoll */}
-                    <polygon
-                      points={`${baseX - 32},${topY + 38} ${baseX - 8},${
-                        topY + 14
-                      } ${baseX + 18},${topY + 38}`}
-                      fill="#84CC16"
-                    />
-                    <polygon
-                      points={`${baseX - 8},${topY + 14} ${baseX + 18},${
-                        topY + 38
-                      } ${baseX - 6},${topY + 40}`}
-                      fill="#65A30D"
-                    />
-                    {/* Secondary Overlapping Ridge */}
-                    <polygon
-                      points={`${baseX - 4},${topY + 42} ${baseX + 18},${
-                        topY + 20
-                      } ${baseX + 38},${topY + 42}`}
-                      fill="#A3E635"
-                    />
-                    <polygon
-                      points={`${baseX + 18},${topY + 20} ${baseX + 38},${
-                        topY + 42
-                      } ${baseX + 16},${topY + 45}`}
-                      fill="#4D7C0F"
-                    />
-                    {/* Hillside terrace line */}
-                    <path
-                      d={`M${baseX - 22},${topY + 32} Q${baseX - 6},${
-                        topY + 24
-                      } ${baseX + 10},${topY + 30}`}
-                      stroke="#4D7C0F"
-                      strokeWidth="1.4"
-                      fill="none"
-                      strokeOpacity="0.6"
-                    />
-                  </g>
-                )}
+        // --- 5. PLAINS COBBLESTONES & MEADOW DETAILS ---
+        if (tile.terrain === TerrainType.Plains && !tile.hasSettlement) {
+          ctx.strokeStyle = "rgba(161, 98, 7, 0.4)";
+          ctx.lineWidth = 2 * zoom;
+          ctx.beginPath();
+          ctx.moveTo(cx - 16 * zoom, cy + 2 * zoom);
+          ctx.quadraticCurveTo(cx, cy - 4 * zoom, cx + 16 * zoom, cy + 4 * zoom);
+          ctx.stroke();
 
-                {/* 5. JAGGED MOUNTAIN RIDGES (Alpine Granite Crags with Snow Caps) */}
-                {tile.terrain === TerrainType.Rocky && !tile.hasSettlement && (
-                  <g pointerEvents="none">
-                    {/* Mountain Shadow Drop */}
-                    <ellipse
-                      cx={baseX + 4}
-                      cy={topY + 42}
-                      rx="32"
-                      ry="12"
-                      fill="rgba(0,0,0,0.3)"
-                    />
+          // Tiny wildflowers
+          ctx.fillStyle = "#FEF08A";
+          ctx.fillRect(cx - 6 * zoom, cy + 4 * zoom, 2 * zoom, 2 * zoom);
+          ctx.fillStyle = "#F43F5E";
+          ctx.fillRect(cx + 8 * zoom, cy - 3 * zoom, 2 * zoom, 2 * zoom);
+        }
 
-                    {/* Left Secondary Crag */}
-                    <polygon
-                      points={`${baseX - 22},${topY + 8} ${baseX - 4},${
-                        topY + 38
-                      } ${baseX - 38},${topY + 36}`}
-                      fill="#64748B"
-                    />
-                    <polygon
-                      points={`${baseX - 22},${topY + 8} ${baseX - 4},${
-                        topY + 38
-                      } ${baseX - 20},${topY + 40}`}
-                      fill="#334155"
-                    />
+        // --- 6. SACRED OBSIDIAN LANDMARK & BEACON SPIRE ---
+        if (tile.terrain === TerrainType.Landmark) {
+          // Plinth
+          ctx.fillStyle = "#1E1B4B";
+          ctx.strokeStyle = "#E63946";
+          ctx.lineWidth = 1.5 * zoom;
+          ctx.beginPath();
+          ctx.arc(cx, cy, 14 * zoom, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
 
-                    {/* Majestic Primary Alpine Peak */}
-                    <polygon
-                      points={`${baseX - 4},${topY - 18} ${baseX + 26},${
-                        topY + 38
-                      } ${baseX - 34},${topY + 36}`}
-                      fill="#94A3B8"
-                    />
-                    <polygon
-                      points={`${baseX - 4},${topY - 18} ${baseX + 26},${
-                        topY + 38
-                      } ${baseX - 2},${topY + 41}`}
-                      fill="#475569"
-                    />
-
-                    {/* Glacier Snow Cap on Summit */}
-                    <polygon
-                      points={`${baseX - 4},${topY - 18} ${baseX + 8},${
-                        topY + 2
-                      } ${baseX - 2},${topY - 1} ${baseX - 16},${topY + 4}`}
-                      fill="#F8FAFC"
-                    />
-                    <polygon
-                      points={`${baseX - 4},${topY - 18} ${baseX + 8},${
-                        topY + 2
-                      } ${baseX},${topY + 4}`}
-                      fill="#E2E8F0"
-                    />
-
-                    {/* Right Shoulder Peak */}
-                    <polygon
-                      points={`${baseX + 18},${topY + 4} ${baseX + 38},${
-                        topY + 40
-                      } ${baseX},${topY + 41}`}
-                      fill="#64748B"
-                    />
-                    <polygon
-                      points={`${baseX + 18},${topY + 4} ${baseX + 38},${
-                        topY + 40
-                      } ${baseX + 18},${topY + 43}`}
-                      fill="#1E293B"
-                    />
-                    {/* Right Peak Snow Tip */}
-                    <polygon
-                      points={`${baseX + 18},${topY + 4} ${baseX + 24},${
-                        topY + 14
-                      } ${baseX + 14},${topY + 14}`}
-                      fill="#F8FAFC"
-                    />
-
-                    {/* Crumbled scree rubble at base */}
-                    <polygon points={`${baseX - 14},${topY + 38} ${baseX - 10},${topY + 34} ${baseX - 6},${topY + 38}`} fill="#94A3B8" />
-                    <polygon points={`${baseX + 12},${topY + 39} ${baseX + 16},${topY + 35} ${baseX + 20},${topY + 39}`} fill="#64748B" />
-                  </g>
-                )}
-
-                {/* 6. SACRED OBSIDIAN SANCTUARIES & BEACON TARGET */}
-                {tile.terrain === TerrainType.Landmark && (
-                  <g pointerEvents="none">
-                    {/* Stepped Obsidian Plinth Base */}
-                    <polygon
-                      points={`${baseX},${topY + 12} ${baseX + 34},${
-                        topY + 29
-                      } ${baseX},${topY + 46} ${baseX - 34},${topY + 29}`}
-                      fill="#1E1B4B"
-                      stroke="#E63946"
-                      strokeWidth="1.5"
-                    />
-                    {/* Runic Energy Ring */}
-                    <ellipse
-                      cx={baseX}
-                      cy={topY + 29}
-                      rx="20"
-                      ry="10"
-                      fill="rgba(230,57,70,0.25)"
-                      stroke="#FF4D5A"
-                      strokeWidth="1.4"
-                    />
-
-                    {tile.id === BEACON_TARGET_TILE_ID ? (
-                      <>
-                        {/* Towering Crimson Light Column to the Heavens */}
-                        <rect
-                          x={baseX - 10}
-                          y={topY - 130}
-                          width="20"
-                          height="160"
-                          fill="url(#beacon-beam)"
-                        />
-                        {/* Floating Mana Ring Orb */}
-                        <ellipse
-                          cx={baseX}
-                          cy={topY - 45}
-                          rx={10 + beaconProgressRatio * 6}
-                          ry={4 + beaconProgressRatio * 2.5}
-                          fill="none"
-                          stroke="#FFD166"
-                          strokeWidth="2"
-                          filter="url(#crimson-glow)"
-                        />
-                        {/* Ancient Beacon Obelisk */}
-                        <polygon
-                          points={`${baseX},${topY - 32} ${baseX + 14},${
-                            topY + 29
-                          } ${baseX - 14},${topY + 29}`}
-                          fill="#E63946"
-                        />
-                        <polygon
-                          points={`${baseX},${topY - 32} ${baseX + 14},${
-                            topY + 29
-                          } ${baseX},${topY + 34}`}
-                          fill="#991B1B"
-                        />
-                        {/* Glowing Golden Apex Core */}
-                        <circle
-                          cx={baseX}
-                          cy={topY - 14}
-                          r={5 + beaconProgressRatio * 4}
-                          fill="#FFD166"
-                          filter="url(#crimson-glow)"
-                        />
-                      </>
-                    ) : (
-                      <>
-                        {/* Ancient Monolith Spires */}
-                        <polygon
-                          points={`${baseX},${topY - 12} ${baseX + 12},${
-                            topY + 29
-                          } ${baseX - 12},${topY + 29}`}
-                          fill="#F59E0B"
-                        />
-                        <circle cx={baseX} cy={topY + 8} r="4" fill="#FF4D5A" />
-                      </>
-                    )}
-                  </g>
-                )}
-
-                {/* ============ AUTHENTIC HOUSES & SETTLEMENTS ============ */}
-                {/* Lv.1 Hamlet: Village Cottages & Campfire */}
-                {/* Lv.2 Stronghold: Fortified Stone Keep, Guardtowers & Cottages */}
-                {/* Lv.3 Citadel: Sovereign Gothic Castle Spire & Thriving City */}
-                {showStructures && tile.settlementLevel > 0 && (
-                  <g pointerEvents="none">
-                    {/* Settlement Cobblestone Courtyard Plaza */}
-                    <polygon
-                      points={`${baseX - 28},${topY + 35} ${baseX},${
-                        topY + 49
-                      } ${baseX + 28},${topY + 35} ${baseX},${topY + 21}`}
-                      fill="#57534E"
-                      stroke="#78716C"
-                      strokeWidth="1"
-                    />
-
-                    {/* --- COTTAGE 1: Left Residential House --- */}
-                    <g transform={`translate(${baseX - 24}, ${topY + 16})`}>
-                      {/* House Base Walls */}
-                      <polygon points="0,8 10,13 10,21 0,16" fill="#A8A29E" />
-                      <polygon points="10,13 20,8 20,16 10,21" fill="#78716C" />
-                      {/* Pitched Shingled Roof */}
-                      <polygon
-                        points="10,2 20,8 10,13 0,8"
-                        fill={isYours ? "#0D9488" : "#DC2626"}
-                      />
-                      {/* Stone Chimney & Smoke Puff */}
-                      <rect x="3" y="1" width="3" height="6" fill="#44403C" />
-                      <circle cx="4.5" cy="-2" r="2.2" fill="#F1F5F9" opacity="0.6" />
-                      <circle cx="6" cy="-6" r="3" fill="#E2E8F0" opacity="0.35" />
-                      {/* Lit Candle Window */}
-                      <rect x="3" y="11" width="3" height="3" fill="#FBBF24" />
-                    </g>
-
-                    {/* --- COTTAGE 2: Right Residential House (Present in Lv.2 and Lv.3) --- */}
-                    {tile.settlementLevel >= 2 && (
-                      <g transform={`translate(${baseX + 6}, ${topY + 18})`}>
-                        <polygon points="0,7 9,12 9,19 0,14" fill="#A8A29E" />
-                        <polygon points="9,12 18,7 18,14 9,19" fill="#78716C" />
-                        <polygon
-                          points="9,1 18,7 9,12 0,7"
-                          fill={isYours ? "#0F766E" : "#B91C1C"}
-                        />
-                        <rect x="12" y="0" width="2.5" height="5" fill="#44403C" />
-                        <circle cx="13" cy="-3" r="2" fill="#F1F5F9" opacity="0.5" />
-                        <rect x="12" y="10" width="2.5" height="2.5" fill="#FBBF24" />
-                      </g>
-                    )}
-
-                    {/* --- CENTRAL MAIN KEEP / CHIEFTAIN HALL --- */}
-                    {/* Flanking Fortified Guard Towers (Lv.2 and Lv.3) */}
-                    {tile.settlementLevel >= 2 && (
-                      <>
-                        {/* West Watchtower */}
-                        <g transform={`translate(${baseX - 22}, ${topY + 4})`}>
-                          <rect x="0" y="8" width="9" height="20" fill="#E2E8F0" />
-                          <polygon
-                            points="0,8 4.5,-2 9,8"
-                            fill={isYours ? "#14B8A6" : "#E63946"}
-                          />
-                          {/* Banner pennant */}
-                          <path
-                            d="M4.5,-2 L4.5,-7 L11,-4.5 Z"
-                            fill={isYours ? "#2DD4BF" : "#FF4D5A"}
-                          />
-                          <circle cx="4.5" cy="14" r="1.5" fill="#FBBF24" />
-                        </g>
-
-                        {/* East Watchtower */}
-                        <g transform={`translate(${baseX + 13}, ${topY + 4})`}>
-                          <rect x="0" y="8" width="9" height="20" fill="#CBD5E1" />
-                          <polygon
-                            points="0,8 4.5,-2 9,8"
-                            fill={isYours ? "#14B8A6" : "#E63946"}
-                          />
-                          <path
-                            d="M4.5,-2 L4.5,-7 L11,-4.5 Z"
-                            fill={isYours ? "#2DD4BF" : "#FF4D5A"}
-                          />
-                          <circle cx="4.5" cy="14" r="1.5" fill="#FBBF24" />
-                        </g>
-                      </>
-                    )}
-
-                    {/* Center Keep Fortress Walls */}
-                    <polygon
-                      points={`${baseX - 16},${topY + 10} ${baseX},${
-                        topY + 18
-                      } ${baseX},${topY + 42} ${baseX - 16},${topY + 34}`}
-                      fill="#F1F5F9"
-                    />
-                    <polygon
-                      points={`${baseX + 16},${topY + 10} ${baseX},${
-                        topY + 18
-                      } ${baseX},${topY + 42} ${baseX + 16},${topY + 34}`}
-                      fill="#CBD5E1"
-                    />
-
-                    {/* Main Castle Spire Roof */}
-                    <polygon
-                      points={`${baseX},${
-                        tile.settlementLevel >= 3 ? topY - 18 : topY - 8
-                      } ${baseX + 18},${topY + 10} ${baseX},${topY + 19} ${
-                        baseX - 18
-                      },${topY + 10}`}
-                      fill={isYours ? "#0D9488" : "#E63946"}
-                    />
-
-                    {/* Lv.3 Citadel Sovereign Golden Spire Orb */}
-                    {tile.settlementLevel >= 3 && (
-                      <>
-                        <line
-                          x1={baseX}
-                          y1={topY - 18}
-                          x2={baseX}
-                          y2={topY - 26}
-                          stroke="#F59E0B"
-                          strokeWidth="2"
-                        />
-                        <circle
-                          cx={baseX}
-                          cy={topY - 26}
-                          r="3.5"
-                          fill="#FFD166"
-                          filter="url(#crimson-glow)"
-                        />
-                      </>
-                    )}
-
-                    {/* Arched Gatehouse & Warm Lantern Windows */}
-                    <polygon
-                      points={`${baseX - 4},${topY + 28} ${baseX + 4},${
-                        topY + 28
-                      } ${baseX + 4},${topY + 39} ${baseX - 4},${topY + 39}`}
-                      fill="#3B1C10"
-                    />
-                    <rect x={baseX - 11} y={topY + 22} width="4" height="6" rx="1" fill="#FBBF24" />
-                    <rect x={baseX + 7} y={topY + 22} width="4" height="6" rx="1" fill="#FBBF24" />
-                  </g>
-                )}
-
-                {/* ============ SPECIALIZED BUILDINGS ============ */}
-                {/* 1. OUTPOST WATCHTOWER */}
-                {showStructures &&
-                  tile.structureType === StructureType.Outpost && (
-                    <g pointerEvents="none">
-                      <g transform={`translate(${baseX + 10}, ${topY + 2})`}>
-                        {/* Stone base & wooden observation deck */}
-                        <rect x="2" y="8" width="12" height="24" fill="#78716C" />
-                        <rect x="0" y="6" width="16" height="4" fill="#A8A29E" />
-                        {/* Conical spire roof */}
-                        <polygon
-                          points="8,-6 17,6 -1,6"
-                          fill={isYours ? "#2DD4BF" : "#FF4D5A"}
-                        />
-                        {/* Torchlight beacon */}
-                        <circle cx="8" cy="14" r="2.8" fill="#FBBF24" />
-                        {/* Palisade defensive spikes */}
-                        <polygon points="-6,26 -3,20 0,26" fill="#44403C" />
-                        <polygon points="16,26 19,20 22,26" fill="#44403C" />
-                      </g>
-                    </g>
-                  )}
-
-                {/* 2. BLACKSMITH FORGE & WORKSHOP */}
-                {showStructures &&
-                  tile.structureType === StructureType.Workshop && (
-                    <g pointerEvents="none">
-                      <g transform={`translate(${baseX - 26}, ${topY + 12})`}>
-                        {/* Stone Forge Building */}
-                        <rect x="0" y="8" width="18" height="15" fill="#57534E" />
-                        <polygon points="9,0 19,8 0,8" fill="#B45309" />
-                        {/* Smelting Kiln Chimney & Embers */}
-                        <rect x="13" y="-3" width="4" height="11" fill="#292524" />
-                        <circle cx="15" cy="-6" r="2.5" fill="#F97316" />
-                        <circle cx="17" cy="-10" r="1.8" fill="#FB923C" opacity="0.6" />
-                        {/* Glowing Anvil Hearth */}
-                        <rect x="4" y="14" width="6" height="5" fill="#EF4444" />
-                      </g>
-                    </g>
-                  )}
-
-                {/* 3. SIGNAL BEACON TOWER */}
-                {showStructures &&
-                  tile.structureType === StructureType.Beacon && (
-                    <g pointerEvents="none">
-                      <g transform={`translate(${baseX + 12}, ${topY - 14})`}>
-                        {/* High Runic Obelisk */}
-                        <polygon points="6,0 12,34 0,34" fill="#FF4D5A" />
-                        <polygon points="6,0 12,34 6,37" fill="#991B1B" />
-                        {/* Brass Armillary Sphere & Light Orb */}
-                        <circle cx="6" cy="0" r="5" fill="#FFD166" filter="url(#crimson-glow)" />
-                        <ellipse cx="6" cy="0" rx="9" ry="3.5" fill="none" stroke="#FFD166" strokeWidth="1.2" />
-                      </g>
-                    </g>
-                  )}
-
-                {/* Tile Coordinate Overlay Tag */}
-                {showCoords && (
-                  <text
-                    x={baseX}
-                    y={topY + HALF_H + 4}
-                    textAnchor="middle"
-                    className="fill-white font-mono text-[10px] font-bold drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
-                    pointerEvents="none"
-                  >
-                    {formatCoords(tile.id)}
-                  </text>
-                )}
-              </g>
+          if (tile.id === BEACON_TARGET_TILE_ID) {
+            // Cosmic vertical beam
+            const beamGrad = ctx.createLinearGradient(
+              cx,
+              cy,
+              cx,
+              cy - 120 * zoom
             );
-          })}
+            beamGrad.addColorStop(0, "rgba(255, 77, 90, 0.9)");
+            beamGrad.addColorStop(0.5, "rgba(230, 57, 70, 0.4)");
+            beamGrad.addColorStop(1, "rgba(230, 57, 70, 0)");
+            ctx.fillStyle = beamGrad;
+            ctx.fillRect(cx - 6 * zoom, cy - 120 * zoom, 12 * zoom, 120 * zoom);
 
-          {/* ============ VOLUMETRIC LOW MIST CLOUDS ============ */}
-          {showAtmosphere && (
-            <g pointerEvents="none" opacity="0.45">
-              {/* Drifting cloud bank front-left */}
-              <ellipse cx="320" cy="580" rx="140" ry="45" fill="url(#cloud-puff)" />
-              <ellipse cx="260" cy="560" rx="90" ry="35" fill="url(#cloud-puff)" />
-              {/* Drifting cloud bank front-right */}
-              <ellipse cx="1060" cy="590" rx="130" ry="42" fill="url(#cloud-puff)" />
-              <ellipse cx="1120" cy="570" rx="85" ry="32" fill="url(#cloud-puff)" />
-            </g>
-          )}
-        </svg>
-      </div>
+            // Spire Monolith
+            ctx.fillStyle = "#E63946";
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - 36 * zoom);
+            ctx.lineTo(cx + 8 * zoom, cy);
+            ctx.lineTo(cx - 8 * zoom, cy);
+            ctx.closePath();
+            ctx.fill();
 
-      {/* ============ HUD CONTROLS ============ */}
+            // Golden Apex Core
+            ctx.fillStyle = "#FFD166";
+            ctx.shadowColor = "#FFD166";
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(
+              cx,
+              cy - 20 * zoom,
+              (4 + beaconProgressRatio * 3) * zoom,
+              0,
+              Math.PI * 2
+            );
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          } else {
+            ctx.fillStyle = "#F59E0B";
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - 20 * zoom);
+            ctx.lineTo(cx + 6 * zoom, cy);
+            ctx.lineTo(cx - 6 * zoom, cy);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
 
-      {/* TOP-LEFT: Island Rotation & Perspective Dial (Lets player view the back) */}
-      <div
-        data-hud-control
-        className="absolute left-4 top-4 z-20 flex items-center gap-2 rounded-2xl border border-white/[0.1] bg-[#101413]/92 p-2 shadow-panel backdrop-blur-md"
-      >
-        <button
-          type="button"
-          onClick={rotateCounterClockwise}
-          title="Rotate Island Left (↺)"
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-[#161B19] text-ink-secondary hover:border-white/20 hover:text-white transition-colors"
-        >
-          <RotateCcw className="h-4 w-4" />
-        </button>
+        // --- 7. AUTHENTIC MEDIEVAL VILLAGE HOUSES & CASTLES ---
+        if (showStructures && tile.settlementLevel > 0) {
+          const drawHouse = (ox: number, oy: number, scale: number) => {
+            const hx = cx + ox * zoom;
+            const hy = cy + oy * zoom;
+            const s = scale * zoom;
 
-        {/* Current Facing Badge with Degree Indicator */}
-        <div className="flex flex-col px-2 text-center min-w-[110px]">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-crimson-accent font-semibold">
-            {ROTATION_NAMES[rotation].deg}° • {ROTATION_NAMES[rotation].label}
-          </span>
-          <span className="text-xs font-bold text-white">
-            {ROTATION_NAMES[rotation].desc}
-          </span>
-        </div>
+            // Foundation & Timber Wall
+            ctx.fillStyle = "#A8A29E";
+            ctx.fillRect(hx - 7 * s, hy - 4 * s, 14 * s, 8 * s);
 
-        <button
-          type="button"
-          onClick={rotateClockwise}
-          title="Rotate Island Right (↻)"
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-[#161B19] text-ink-secondary hover:border-white/20 hover:text-white transition-colors"
-        >
-          <RotateCw className="h-4 w-4" />
-        </button>
+            // Pitched Shingled Roof
+            ctx.fillStyle = isYours ? "#0D9488" : "#DC2626";
+            ctx.beginPath();
+            ctx.moveTo(hx, hy - 14 * s);
+            ctx.lineTo(hx + 9 * s, hy - 4 * s);
+            ctx.lineTo(hx - 9 * s, hy - 4 * s);
+            ctx.closePath();
+            ctx.fill();
 
-        <div className="h-6 w-px bg-white/[0.1] mx-0.5" />
+            // Stone Chimney & Smoke Puff
+            ctx.fillStyle = "#44403C";
+            ctx.fillRect(hx + 3 * s, hy - 16 * s, 3 * s, 7 * s);
+            ctx.fillStyle = "rgba(241, 245, 249, 0.55)";
+            ctx.beginPath();
+            ctx.arc(hx + 4.5 * s, hy - 19 * s, 2 * s, 0, Math.PI * 2);
+            ctx.fill();
 
-        {/* Auto-Orbit Play/Pause */}
-        <button
-          type="button"
-          onClick={() => setIsOrbiting((v) => !v)}
-          title={isOrbiting ? "Pause Island Auto-Orbit" : "Start Island Auto-Orbit (360°)"}
-          className={cn(
-            "flex h-9 items-center gap-1.5 px-3 rounded-xl border text-xs font-semibold backdrop-blur-md transition-colors",
-            isOrbiting
-              ? "border-crimson/60 bg-crimson/20 text-crimson-accent"
-              : "border-white/[0.08] bg-[#161B19] text-ink-secondary hover:text-white"
-          )}
-        >
-          {isOrbiting ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-          <span>{isOrbiting ? "Orbiting" : "Orbit"}</span>
-        </button>
-      </div>
+            // Lit Amber Window
+            ctx.fillStyle = "#FBBF24";
+            ctx.fillRect(hx - 3 * s, hy - 1 * s, 3 * s, 3 * s);
+          };
 
-      {/* TOP-RIGHT: Viewport, Layers & Atmosphere Toolbar */}
+          // Residential Cottage
+          drawHouse(-12, 6, 0.95);
+
+          // Stronghold / Citadel Main Keep
+          const kw = 16 * zoom;
+          const kh = (tile.settlementLevel >= 3 ? 32 : 22) * zoom;
+          const kx = cx + (tile.settlementLevel >= 2 ? 4 * zoom : 0);
+          const ky = cy - kh / 2;
+
+          // Keep Walls
+          ctx.fillStyle = "#E2E8F0";
+          ctx.fillRect(kx - kw / 2, ky, kw, kh);
+
+          // Roof Spire
+          ctx.fillStyle = isYours ? "#14B8A6" : "#E63946";
+          ctx.beginPath();
+          ctx.moveTo(kx, ky - 14 * zoom);
+          ctx.lineTo(kx + kw / 2 + 2 * zoom, ky);
+          ctx.lineTo(kx - kw / 2 - 2 * zoom, ky);
+          ctx.closePath();
+          ctx.fill();
+
+          // Gatehouse Arch
+          ctx.fillStyle = "#1E293B";
+          ctx.beginPath();
+          ctx.arc(kx, ky + kh - 4 * zoom, 3 * zoom, Math.PI, 0);
+          ctx.fill();
+
+          // Citadel Sovereign Golden Orb
+          if (tile.settlementLevel >= 3) {
+            ctx.fillStyle = "#FFD166";
+            ctx.beginPath();
+            ctx.arc(kx, ky - 16 * zoom, 3 * zoom, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Second House for Lv.2+
+          if (tile.settlementLevel >= 2) {
+            drawHouse(14, 8, 0.85);
+          }
+        }
+
+        // --- 8. OUTPOSTS, WORKSHOPS & BEACONS ---
+        if (showStructures) {
+          if (tile.structureType === StructureType.Outpost) {
+            const tx = cx + 8 * zoom;
+            const ty = cy;
+            ctx.fillStyle = "#78716C";
+            ctx.fillRect(tx - 4 * zoom, ty - 18 * zoom, 8 * zoom, 18 * zoom);
+            ctx.fillStyle = isYours ? "#2DD4BF" : "#FF4D5A";
+            ctx.beginPath();
+            ctx.moveTo(tx, ty - 26 * zoom);
+            ctx.lineTo(tx + 6 * zoom, ty - 18 * zoom);
+            ctx.lineTo(tx - 6 * zoom, ty - 18 * zoom);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "#FBBF24";
+            ctx.fillRect(tx - 2 * zoom, ty - 14 * zoom, 4 * zoom, 4 * zoom);
+          } else if (tile.structureType === StructureType.Workshop) {
+            const fx = cx - 8 * zoom;
+            const fy = cy + 4 * zoom;
+            ctx.fillStyle = "#57534E";
+            ctx.fillRect(fx - 7 * zoom, fy - 6 * zoom, 14 * zoom, 10 * zoom);
+            ctx.fillStyle = "#B45309";
+            ctx.beginPath();
+            ctx.moveTo(fx, fy - 12 * zoom);
+            ctx.lineTo(fx + 8 * zoom, fy - 6 * zoom);
+            ctx.lineTo(fx - 8 * zoom, fy - 6 * zoom);
+            ctx.closePath();
+            ctx.fill();
+            // Forge fire
+            ctx.fillStyle = "#EF4444";
+            ctx.fillRect(fx - 2 * zoom, fy - 2 * zoom, 4 * zoom, 4 * zoom);
+          } else if (tile.structureType === StructureType.Beacon) {
+            const bx = cx + 10 * zoom;
+            const by = cy - 4 * zoom;
+            ctx.fillStyle = "#FF4D5A";
+            ctx.beginPath();
+            ctx.moveTo(bx, by - 24 * zoom);
+            ctx.lineTo(bx + 5 * zoom, by);
+            ctx.lineTo(bx - 5 * zoom, by);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "#FFD166";
+            ctx.beginPath();
+            ctx.arc(bx, by - 24 * zoom, 3.5 * zoom, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // D. Optional Coordinate Tag
+        if (showCoords) {
+          ctx.fillStyle = "#FFFFFF";
+          ctx.font = `bold ${Math.max(9, Math.round(10 * zoom))}px monospace`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(formatCoords(tile.id), cx, cy + 2 * zoom);
+        }
+      }
+
+      ctx.restore();
+      animId = requestAnimationFrame(render);
+    };
+
+    animId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animId);
+  }, [
+    tiles,
+    selectedTileId,
+    hoveredTileId,
+    showBorders,
+    showStructures,
+    showCoords,
+    showAtmosphere,
+    normalizedUser,
+    beaconProgressRatio,
+  ]);
+
+  // Pointer Interaction Handlers (Continuous Gyro Swipe with Momentum)
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const p = pointerRef.current;
+    p.isDown = true;
+    p.button = e.button;
+    p.lastX = e.clientX;
+    p.lastY = e.clientY;
+    p.startX = e.clientX;
+    p.startY = e.clientY;
+    p.lastTime = performance.now();
+    p.moved = false;
+
+    // Halt current inertia when user grabs the island
+    cameraRef.current.velYaw = 0;
+    cameraRef.current.velPitch = 0;
+    cameraRef.current.velPanX = 0;
+    cameraRef.current.velPanY = 0;
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const p = pointerRef.current;
+    if (!p.isDown) {
+      // Hover hit-test
+      hitTestTile(e.clientX, e.clientY);
+      return;
+    }
+
+    const now = performance.now();
+    const dt = Math.max(1, now - p.lastTime);
+    const dx = e.clientX - p.lastX;
+    const dy = e.clientY - p.lastY;
+
+    if (Math.abs(e.clientX - p.startX) > 4 || Math.abs(e.clientY - p.startY) > 4) {
+      p.moved = true;
+    }
+
+    const cam = cameraRef.current;
+
+    if (e.buttons === 2 || e.shiftKey) {
+      // Pan mode (Right-click or Shift+drag)
+      cam.panX += dx;
+      cam.panY += dy;
+      cam.velPanX = dx / dt;
+      cam.velPanY = dy / dt;
+    } else {
+      // Gyro 3D Swipe Rotation mode (Left-click / touch swipe)
+      // Horizontal swipe rotates yaw, vertical swipe rotates pitch
+      const deltaYaw = dx * 0.0065;
+      const deltaPitch = -dy * 0.0045;
+
+      cam.yaw += deltaYaw;
+      cam.pitch = Math.max(0.42, Math.min(1.22, cam.pitch + deltaPitch));
+
+      // Calculate instantaneous swipe force / velocity
+      cam.velYaw = (dx / dt) * 0.22;
+      cam.velPitch = (-dy / dt) * 0.15;
+    }
+
+    p.lastX = e.clientX;
+    p.lastY = e.clientY;
+    p.lastTime = now;
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const p = pointerRef.current;
+    p.isDown = false;
+
+    // If it was a quick click without dragging, select tile
+    if (!p.moved) {
+      const tileId = hitTestTile(e.clientX, e.clientY);
+      if (tileId !== null) {
+        onSelectTile(tileId);
+      }
+    }
+  };
+
+  // Wheel zoom
+  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.12 : -0.12;
+    handleZoom(delta);
+  };
+
+  // 3D Screen-to-Tile Hit Test
+  const hitTestTile = (clientX: number, clientY: number): number | null => {
+    const container = containerRef.current;
+    if (!container) return null;
+    const rect = container.getBoundingClientRect();
+    const mx = clientX - rect.left;
+    const my = clientY - rect.top;
+
+    const cam = cameraRef.current;
+    const centerX = rect.width / 2 + cam.panX;
+    const centerY = rect.height / 2 + cam.panY;
+    const cosY = Math.cos(cam.yaw);
+    const sinY = Math.sin(cam.yaw);
+    const sinP = Math.sin(cam.pitch);
+    const cosP = Math.cos(cam.pitch);
+    const zoom = cam.zoom;
+
+    let closestTileId: number | null = null;
+    let minDistance = 34 * zoom;
+
+    for (const tile of tiles) {
+      const wx = (tile.col - 3) * TILE_SIZE;
+      const wy = (tile.row - 3) * TILE_SIZE;
+      const z = getElevation(tile.terrain);
+
+      const rx = wx * cosY - wy * sinY;
+      const ry = wx * sinY + wy * cosY;
+      const sx = centerX + rx * zoom;
+      const sy = centerY + (ry * sinP - z * cosP) * zoom;
+
+      const dist = Math.hypot(mx - sx, my - sy);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestTileId = tile.id;
+      }
+    }
+
+    setHoveredTileId(closestTileId);
+    return closestTileId;
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className={cn(
+        "relative w-full h-full overflow-hidden select-none bg-[#060809] cursor-grab active:cursor-grabbing",
+        className
+      )}
+    >
+      {/* High-Performance 3D Living Canvas */}
+      <canvas
+        ref={canvasRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        onWheel={handleWheel}
+        onContextMenu={(e) => e.preventDefault()}
+        className="w-full h-full block"
+      />
+
+      {/* MINIMALIST FLOATING CONTROLS (Tucked safely in top-right corner, non-obtrusive) */}
       <div
         data-hud-control
         className="absolute right-4 top-4 z-20 flex flex-col gap-1.5"
@@ -1274,8 +1016,8 @@ export function IsometricWorldMap({
         <button
           type="button"
           onClick={resetCamera}
-          title="Reset Camera & Center View"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.1] bg-[#121615]/90 text-ink-secondary hover:border-white/25 hover:text-white backdrop-blur-md transition-colors"
+          title="Reset Camera & Center Island"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.1] bg-[#101413]/85 text-ink-secondary hover:border-white/25 hover:text-white backdrop-blur-md transition-colors"
         >
           <Maximize2 className="h-4 w-4" />
         </button>
@@ -1287,7 +1029,7 @@ export function IsometricWorldMap({
             "flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-md transition-colors",
             showBorders
               ? "border-crimson/50 bg-crimson/20 text-crimson-accent"
-              : "border-white/[0.1] bg-[#121615]/90 text-ink-secondary hover:text-white"
+              : "border-white/[0.1] bg-[#101413]/85 text-ink-secondary hover:text-white"
           )}
         >
           <Shield className="h-4 w-4" />
@@ -1295,42 +1037,37 @@ export function IsometricWorldMap({
         <button
           type="button"
           onClick={() => setShowStructures((v) => !v)}
-          title="Toggle Structures & Houses Layer"
+          title="Toggle Structures & Villages"
           className={cn(
             "flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-md transition-colors",
             showStructures
               ? "border-crimson/50 bg-crimson/20 text-crimson-accent"
-              : "border-white/[0.1] bg-[#121615]/90 text-ink-secondary hover:text-white"
+              : "border-white/[0.1] bg-[#101413]/85 text-ink-secondary hover:text-white"
           )}
         >
           <Layers className="h-4 w-4" />
         </button>
         <button
           type="button"
-          onClick={() => setShowAtmosphere((v) => !v)}
-          title="Toggle Atmospheric Mist & Effects"
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-md transition-colors",
-            showAtmosphere
-              ? "border-crimson/50 bg-crimson/20 text-crimson-accent"
-              : "border-white/[0.1] bg-[#121615]/90 text-ink-secondary hover:text-white"
-          )}
-        >
-          <Sparkles className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
           onClick={() => setShowCoords((v) => !v)}
-          title="Toggle Tile Coordinates"
+          title="Toggle Coordinates"
           className={cn(
             "flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-md transition-colors",
             showCoords
               ? "border-crimson/50 bg-crimson/20 text-crimson-accent"
-              : "border-white/[0.1] bg-[#121615]/90 text-ink-secondary hover:text-white"
+              : "border-white/[0.1] bg-[#101413]/85 text-ink-secondary hover:text-white"
           )}
         >
           <Grid className="h-4 w-4" />
         </button>
+      </div>
+
+      {/* SUBTLE INTUITIVE GYRO SWIPE GESTURE HINT (Bottom-Center, Non-blocking) */}
+      <div
+        data-hud-control
+        className="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 z-20 rounded-full border border-white/[0.08] bg-[#0E1211]/80 px-4 py-1.5 text-[11px] font-medium text-ink-muted backdrop-blur-md shadow-panel transition-opacity"
+      >
+        <span className="text-crimson-accent font-semibold">✦ Swipe / Drag</span> to spin island with inertia &bull; <span className="text-white/80">Scroll</span> to zoom &bull; <span className="text-white/80">Click</span> to select tile
       </div>
 
       {/* BOTTOM-RIGHT: Zoom Controls + Mini-Map */}
@@ -1338,10 +1075,10 @@ export function IsometricWorldMap({
         data-hud-control
         className="absolute bottom-4 right-4 z-20 flex items-end gap-2.5"
       >
-        <div className="flex flex-col overflow-hidden rounded-lg border border-white/[0.1] bg-[#121615]/90 backdrop-blur-md">
+        <div className="flex flex-col overflow-hidden rounded-lg border border-white/[0.1] bg-[#101413]/90 backdrop-blur-md">
           <button
             type="button"
-            onClick={() => setZoom((z) => Math.min(2.1, +(z + 0.15).toFixed(2)))}
+            onClick={() => handleZoom(0.18)}
             className="flex h-8 w-8 items-center justify-center text-ink-secondary hover:bg-white/[0.08] hover:text-white border-b border-white/[0.08]"
             aria-label="Zoom in"
           >
@@ -1349,7 +1086,7 @@ export function IsometricWorldMap({
           </button>
           <button
             type="button"
-            onClick={() => setZoom((z) => Math.max(0.55, +(z - 0.15).toFixed(2)))}
+            onClick={() => handleZoom(-0.18)}
             className="flex h-8 w-8 items-center justify-center text-ink-secondary hover:bg-white/[0.08] hover:text-white"
             aria-label="Zoom out"
           >
