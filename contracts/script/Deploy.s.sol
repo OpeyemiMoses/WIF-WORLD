@@ -6,8 +6,8 @@ import "../src/WIFWorlds.sol";
 
 contract DeployScript is Script {
     function run() external returns (WIFWorlds game) {
-        address wifToken = vm.envOr("WIF_TOKEN_ADDRESS", address(0x5173b8ea6923c2d40267890d45c46a3480954773));
-        address treasury = vm.envOr("TREASURY_ADDRESS", address(0x479253b82eb63eb36f140ecabf0237cc338084e7));
+        address wifToken = vm.envOr("WIF_TOKEN_ADDRESS", address(0x5173b8eA6923c2d40267890D45C46a3480954773));
+        address treasury = vm.envOr("TREASURY_ADDRESS", address(0x479253b82Eb63eb36F140EcABf0237cc338084e7));
 
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
