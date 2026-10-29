@@ -14,6 +14,9 @@ export const ROBINHOOD_EXPLORER_URL =
 export const WIF_TOKEN_ADDRESS = (process.env.NEXT_PUBLIC_WIF_TOKEN_ADDRESS ||
   "0x5173b8ea6923c2d40267890d45c46a3480954773") as `0x${string}`;
 
+export const TREASURY_ADDRESS = (process.env.NEXT_PUBLIC_TREASURY_ADDRESS ||
+  "0x479253b82eb63eb36f140ecabf0237cc338084e7") as `0x${string}`;
+
 export const WIF_DECIMALS = 18;
 
 const rawContract = (process.env.NEXT_PUBLIC_WIF_WORLDS_CONTRACT || "").trim();
