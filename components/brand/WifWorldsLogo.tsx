@@ -20,6 +20,11 @@ export function WifWorldsGameIcon({
   className?: string;
   animated?: boolean;
 }) {
+  const id = React.useId().replace(/:/g, "_");
+  const topPeakId = `wwTopPeak_${id}`;
+  const leftWingId = `wwLeftWing_${id}`;
+  const rightTileId = `wwRightTile_${id}`;
+
   return (
     <span
       className={cn(
@@ -43,7 +48,7 @@ export function WifWorldsGameIcon({
       >
         <defs>
           <linearGradient
-            id="wwTopPeak"
+            id={topPeakId}
             x1="16"
             y1="6"
             x2="48"
@@ -55,7 +60,7 @@ export function WifWorldsGameIcon({
             <stop offset="100%" stopColor="#A61B27" />
           </linearGradient>
           <linearGradient
-            id="wwLeftWing"
+            id={leftWingId}
             x1="8"
             y1="20"
             x2="32"
@@ -66,7 +71,7 @@ export function WifWorldsGameIcon({
             <stop offset="100%" stopColor="#9E1B26" />
           </linearGradient>
           <linearGradient
-            id="wwRightTile"
+            id={rightTileId}
             x1="34"
             y1="24"
             x2="56"
@@ -79,11 +84,11 @@ export function WifWorldsGameIcon({
         </defs>
 
         {/* Top Isometric Fortress Peak with dark inner diamond */}
-        <polygon points="31,6 47,20 31,34 15,20" fill="url(#wwTopPeak)" />
+        <polygon points="31,6 47,20 31,34 15,20" fill={`url(#${topPeakId})`} />
         <polygon points="31,14.5 38.5,20.5 31,26.5 23.5,20.5" fill="#0B0D0C" />
 
         {/* Left Isometric Wing & Lower Bastion */}
-        <polygon points="8,27 18,17 27,26 17,36" fill="url(#wwLeftWing)" />
+        <polygon points="8,27 18,17 27,26 17,36" fill={`url(#${leftWingId})`} />
         <polygon points="8,27 17,36 27,46 18,55 8,44" fill="#C92835" />
 
         {/* Center-Right Stepped W Bridge */}
@@ -93,7 +98,7 @@ export function WifWorldsGameIcon({
         <polygon points="47,20 56,28 48,36 39,27" fill="#B8202D" />
 
         {/* Detached Bottom-Right Living Map Tile */}
-        <polygon points="41,49 49,41 57,49 49,57" fill="url(#wwRightTile)" />
+        <polygon points="41,49 49,41 57,49 49,57" fill={`url(#${rightTileId})`} />
       </svg>
     </span>
   );
@@ -113,13 +118,13 @@ export function WifWorldsLogo({
       ? "w-12 h-12"
       : size === "xl"
       ? "w-16 h-16"
-      : "w-9 h-9";
+      : "w-8 h-8 sm:w-9 sm:h-9";
 
   return (
     <div
       className={cn(
         "group/logo inline-flex items-center select-none",
-        stacked ? "flex-col gap-2.5 text-center" : "gap-2.5",
+        stacked ? "flex-col gap-2.5 text-center" : "gap-2 sm:gap-2.5",
         className
       )}
     >
@@ -135,7 +140,7 @@ export function WifWorldsLogo({
           className={cn(
             "whitespace-nowrap font-extrabold uppercase tracking-[0.14em] text-ink-primary leading-none transition-colors duration-300 group-hover/logo:text-white",
             size === "sm" && "text-sm",
-            size === "md" && "text-[14px] sm:text-[15px]",
+            size === "md" && "text-sm sm:text-[15px]",
             size === "lg" && "text-2xl",
             size === "xl" && "text-3xl"
           )}

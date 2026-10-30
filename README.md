@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./public/brand/logo.svg" alt="WIF WORLDS: The Living Map" width="340" />
+</p>
+
 # WIF WORLDS: The Living Map
 
 > **A persistent, multiplayer onchain strategy and civilization-building game deployed on Robinhood Chain (`Chain ID 4663`) and powered by the official `$WIF` token (`0x5173b8eA6923c2d40267890D45C46a3480954773`).**

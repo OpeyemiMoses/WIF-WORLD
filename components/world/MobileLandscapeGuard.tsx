@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Compass, RotateCw, Smartphone } from "lucide-react";
-import { WifWorldsLogo } from "@/components/brand/WifWorldsLogo";
+import { WifWorldsGameIcon } from "@/components/brand/WifWorldsLogo";
 
 /**
  * Full-screen mobile portrait orientation guard for `/world`.
@@ -68,7 +68,7 @@ export function MobileLandscapeGuard() {
       <div className="relative z-10 mx-auto flex max-w-sm flex-col items-center space-y-6 rounded-3xl border border-amber-200/20 bg-[#101413]/95 p-7 shadow-[0_24px_80px_rgba(0,0,0,0.85)]">
         {/* Game Crest Badge */}
         <div className="flex items-center gap-2.5 rounded-full border border-white/[0.1] bg-obsidian/90 px-4 py-1.5">
-          <WifWorldsLogo className="h-5 w-5" />
+          <WifWorldsGameIcon className="h-5 w-5" animated={false} />
           <span className="text-xs font-extrabold tracking-[0.14em] uppercase text-white">
             WIF WORLDS • Living Map
           </span>

@@ -309,8 +309,7 @@ export function TopNav() {
               className="group flex items-center shrink-0 focus:outline-none"
               aria-label="WIF WORLDS Home"
             >
-              <WifWorldsLogo size="sm" className="sm:hidden max-lg:landscape:inline-flex" />
-              <WifWorldsLogo size="md" className="hidden sm:inline-flex max-lg:landscape:hidden" />
+              <WifWorldsLogo size="md" />
             </Link>
 
             <nav className="hidden lg:flex items-center gap-1" aria-label="Main">

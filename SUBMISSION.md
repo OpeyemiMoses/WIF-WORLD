@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./public/brand/logo.svg" alt="WIF WORLDS: The Living Map" width="300" />
+</p>
+
 # WIF WORLDS: The Living Map — Official Hackathon Submission Package
 
 **Project Title:** WIF WORLDS: The Living Map  
