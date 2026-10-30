@@ -202,7 +202,7 @@ export default function WorldEventsPage() {
       : worldEvent.title;
 
   return (
-    <main className="animate-page-enter flex-1 flex flex-col bg-[#070B0E] relative overflow-y-auto">
+    <main className="animate-page-enter flex-1 flex flex-col bg-[#070B0E] relative">
       <PageCastleBackdrop />
 
       <div className="relative z-10 mx-auto w-full max-w-[1440px] flex-1 px-4 sm:px-6 lg:px-8 py-8 space-y-8">

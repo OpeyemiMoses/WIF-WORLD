@@ -277,29 +277,48 @@ contract WIFWorldsTest is Test {
 
     function test_WorldEventCompletionUnlocksRegion1() public {
         assertFalse(game.isRegionUnlocked(1));
+        assertEq(game.activeEventId(), 1);
+
+        // Verify pioneer tile 31 is preserved at genesis and contributed 6.25 WIF to Event 1
+        WIFWorlds.Tile memory pioneerTile = game.getTile(31);
+        assertEq(pioneerTile.owner, 0x78b7b043921EE70806c66905E31fc2D9E75455a6);
+
+        // Claiming a tile also automatically increments the active event progress!
+        vm.prank(alice);
+        game.claimTile(9); // +6.25 WIF -> Event 1 now has 12.50 WIF
+
+        (,,,, uint256 contribAfterClaim, , bool completed, ) = game.getEvent(1);
+        assertEq(contribAfterClaim, 12.5 ether);
+        assertFalse(completed);
 
         // Alice contributes 1000 WIF
         vm.prank(alice);
         game.contributeToEvent(1, 1000 ether);
 
-        (,,,,, , bool completed, ) = game.getEvent(1);
+        (,,,,, , completed, ) = game.getEvent(1);
         assertFalse(completed);
         assertFalse(game.isRegionUnlocked(1));
 
-        // Bob contributes remaining 250 WIF to hit 1250 target
+        // Bob contributes remaining 237.5 WIF to hit 1250 target
         vm.prank(bob);
-        game.contributeToEvent(1, 250 ether);
+        game.contributeToEvent(1, 237.5 ether);
 
         (,,,,, , completed, ) = game.getEvent(1);
         assertTrue(completed);
         assertTrue(game.isRegionUnlocked(1));
 
-        // Now players can claim tiles in Region 1 (worldTileId 49..97)!
+        // Verify activeEventId automatically advances to Event 2 ("The Great Harvest")!
+        assertEq(game.activeEventId(), 2);
+
+        // Now players can claim tiles in Region 1 (worldTileId 49..97) and progress goes to Event 2!
         // Tile 49 is Rocky in Region 1
         vm.prank(alice);
         game.claimTile(49);
         assertEq(game.getTile(49).owner, alice);
         assertEq(game.getTile(49).regionId, 1);
+
+        (,,,, uint256 event2Contrib, , , ) = game.getEvent(2);
+        assertEq(event2Contrib, 6.25 ether);
     }
 
     function test_AdminAuthorizationAndEventManagement() public {

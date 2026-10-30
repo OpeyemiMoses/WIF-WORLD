@@ -7,6 +7,7 @@ import { robinhoodChain, ROBINHOOD_RPC_URL } from "@/lib/chain/robinhood";
 
 export const wagmiConfig = createConfig({
   chains: [robinhoodChain],
+  multiInjectedProviderDiscovery: true,
   connectors: [
     injected({
       shimDisconnect: true,

@@ -2,7 +2,7 @@
 
 **Repository:** [https://github.com/OpeyemiMoses/WIF-WORLD](https://github.com/OpeyemiMoses/WIF-WORLD)  
 **Target Chain:** Robinhood Chain (`4663`)  
-**Deployed `WIFWorlds` Contract:** `0x8936a00177AeB875c67C03EA019b1577aD8C0aa1`  
+**Deployed `WIFWorlds` Contract:** `0xAa2dd131F596249755CCcdcc48447C1434AC109B`  
 **Core Token:** `$WIF` (`0x5173b8eA6923c2d40267890D45C46a3480954773`)  
 **Treasury & Admin Address:** `0x479253b82Eb63eb36F140EcABf0237cc338084e7`  
 
@@ -10,14 +10,14 @@
 
 ## Completed (Done)
 
-- [x] **1. Live Onchain Smart Contract Deployment (`WIFWorlds.sol` — 4 Maps + 5 Events):**
-  - Deployed at `0x8936a00177AeB875c67C03EA019b1577aD8C0aa1` on Robinhood Chain (`4663`).
-  - Deployment Tx: `0x7c9cb54559125d853429526cae33e7d066245d96e5edceecf5301fd051dd3d8d`.
+- [x] **1. Live Onchain Smart Contract Deployment (`WIFWorlds.sol` — 4 Maps + 5 Auto-Unlocking Events + Preserved Pioneer State):**
+  - Deployed at `0xAa2dd131F596249755CCcdcc48447C1434AC109B` on Robinhood Chain (`4663`).
+  - Deployment Tx: `0xf48366cf80a028a7e4af3c28230aceda787da19a5bda5e32713226ea5f20ea65`.
 - [x] **2. Connected Deployed Contract to Frontend (All 4 Maps & All 5 Events Wired):**
-  - Wired `0x8936a00177AeB875c67C03EA019b1577aD8C0aa1` in `lib/chain/robinhood.ts`, `.env.local`, and `.env.example`.
+  - Wired `0xAa2dd131F596249755CCcdcc48447C1434AC109B` in `lib/chain/robinhood.ts`, `.env.local`, and `.env.example`.
   - All 4 maps (*The Heartlands*, *The Wild Frontier*, *The Highlands*, *The Crossroads* — 196 tiles) and all 5 World Events (`events[1..5]`) read live from Robinhood Chain.
 - [x] **3. Live Onchain Transactions Executed (`txs_valid`):**
-  - `$WIF` Approval Tx: `0x7d800a147122806974a13fd1dfe7fbef81309b687a32be98c02bcdc20059bff9` (Block `#101770314`)
+  - `$WIF` Approval Tx: `0xab6e44d34f00b86693018242cedf63fcf6761c47f05d2c3cbfcee781681357d8` (Block `#101780100`)
 - [x] **4. Mobile Landscape Mode Guard & Responsive Layout:**
   - `/world` runs in landscape mode on mobile with `<MobileLandscapeGuard />` portrait-blocker overlay; `/` landing page supports both portrait and landscape seamlessly.
 - [x] **4. Flattened Contract Generated for Blockscout Browser Verification:**

@@ -382,19 +382,22 @@ export function NotificationCenter() {
       </button>
 
       {open && (
-        <div className="fixed sm:absolute right-3 sm:right-0 top-16 sm:top-auto sm:mt-2 w-[calc(100vw-24px)] sm:w-96 rounded-2xl border border-white/[0.12] bg-[#121615]/98 shadow-panel backdrop-blur-xl z-50 overflow-hidden">
-          <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
+        <div
+          className="fixed sm:absolute right-3 sm:right-0 top-16 sm:top-auto sm:mt-2 w-[calc(100vw-24px)] sm:w-96 rounded-2xl border border-amber-200/25 bg-[#0E1312] shadow-[0_28px_90px_rgba(0,0,0,0.95)] z-50 overflow-hidden"
+          style={{ backgroundColor: "#0E1312" }}
+        >
+          <div className="flex items-center justify-between border-b border-white/[0.12] bg-[#141A18] px-4 py-3.5">
             <div>
               <div className="text-xs font-bold text-white flex items-center gap-1.5">
                 <Bell className="h-3.5 w-3.5 text-crimson-accent" />
                 <span>Realm Dispatches</span>
                 {isConnected && unreadCount > 0 && (
-                  <span className="rounded-full bg-crimson/20 px-2 py-0.5 font-mono text-[10px] text-crimson-accent">
+                  <span className="rounded-full bg-crimson/25 border border-crimson/40 px-2 py-0.5 font-mono text-[10px] text-crimson-accent">
                     {unreadCount} new
                   </span>
                 )}
               </div>
-              <div className="text-[10px] text-ink-muted">
+              <div className="text-[11px] text-slate-300 mt-0.5">
                 Wallet-isolated alerts for your settlements & world events
               </div>
             </div>
@@ -403,16 +406,16 @@ export function NotificationCenter() {
               <button
                 type="button"
                 onClick={handleMarkAllRead}
-                className="inline-flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-1 text-[10px] font-semibold text-ink-secondary hover:text-white transition-colors"
+                className="inline-flex items-center gap-1 rounded-lg border border-white/[0.15] bg-[#1E2623] px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-[#27312D] transition-colors"
               >
-                <CheckCheck className="h-3 w-3" />
+                <CheckCheck className="h-3 w-3 text-emerald-400" />
                 <span>Mark all read</span>
               </button>
             )}
           </div>
 
           {/* Category Filter Pills */}
-          <div className="flex items-center gap-1 overflow-x-auto border-b border-white/[0.06] bg-[#0D100F] px-3 py-2">
+          <div className="flex items-center gap-1.5 overflow-x-auto border-b border-white/[0.1] bg-[#0A0E0D] px-3 py-2.5">
             {CATEGORIES.map((cat) => {
               const active = selectedCategory === cat;
               return (
@@ -421,10 +424,10 @@ export function NotificationCenter() {
                   type="button"
                   onClick={() => setSelectedCategory(cat)}
                   className={cn(
-                    "shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-semibold transition-colors",
+                    "shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors",
                     active
-                      ? "bg-crimson text-white"
-                      : "text-ink-muted hover:text-white hover:bg-white/[0.04]"
+                      ? "bg-crimson text-white shadow-crimson-sm"
+                      : "bg-[#151B19] text-slate-300 hover:text-white hover:bg-[#1E2623]"
                   )}
                 >
                   {cat}
@@ -434,14 +437,17 @@ export function NotificationCenter() {
           </div>
 
           {/* Notification Items List */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-white/[0.06]">
+          <div
+            className="max-h-80 overflow-y-auto divide-y divide-white/[0.1] bg-[#0E1312]"
+            style={{ backgroundColor: "#0E1312" }}
+          >
             {!isConnected ? (
-              <div className="p-6 text-center text-xs text-ink-muted">
+              <div className="p-6 text-center text-xs text-slate-300 bg-[#0E1312]">
                 Connect your wallet to receive persistent notifications for your
                 settlements, resource storage, missions, and world events.
               </div>
             ) : filteredNotifications.length === 0 ? (
-              <div className="p-6 text-center text-xs text-ink-muted">
+              <div className="p-6 text-center text-xs text-slate-300 bg-[#0E1312]">
                 No notifications in{" "}
                 <span className="text-white font-semibold">
                   {selectedCategory}
@@ -458,8 +464,8 @@ export function NotificationCenter() {
                   className={cn(
                     "p-3.5 transition-colors cursor-pointer",
                     item.read
-                      ? "bg-transparent hover:bg-white/[0.02]"
-                      : "bg-crimson/[0.06] hover:bg-crimson/[0.1]"
+                      ? "bg-[#111715] hover:bg-[#18201E]"
+                      : "bg-[#221215] hover:bg-[#2B161A]"
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -469,9 +475,9 @@ export function NotificationCenter() {
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {!item.read && (
-                        <span className="h-2 w-2 rounded-full bg-crimson-accent" />
+                        <span className="h-2 w-2 rounded-full bg-crimson-accent shadow-[0_0_6px_#FF4D5A]" />
                       )}
-                      <span className="font-mono text-[10px] text-ink-dim">
+                      <span className="font-mono text-[10px] text-slate-400">
                         {new Date(item.createdAt).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -479,11 +485,11 @@ export function NotificationCenter() {
                       </span>
                     </div>
                   </div>
-                  <p className="mt-1 text-[11px] text-ink-secondary leading-relaxed">
+                  <p className="mt-1.5 text-[11px] text-slate-200 leading-relaxed">
                     {item.message}
                   </p>
-                  <div className="mt-2 flex items-center justify-between text-[10px]">
-                    <span className="rounded bg-white/[0.05] px-1.5 py-0.5 font-mono text-ink-muted">
+                  <div className="mt-2.5 flex items-center justify-between text-[10px]">
+                    <span className="rounded border border-white/[0.1] bg-[#19211F] px-2 py-0.5 font-mono text-slate-300">
                       {item.category}
                     </span>
                     {item.href && (

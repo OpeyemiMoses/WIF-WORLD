@@ -830,6 +830,34 @@ contract WIFWorlds is Ownable {
             active: true
         });
         emit EventConfigured(5, "The Northern Passage", 1500 ether, 3, true);
+
+        // Preserve & migrate Genesis pioneer state from 0x567e5362Db7D28E70B6216D78F25FE8Dd7F58E99
+        address pioneer = 0x78b7b043921EE70806c66905E31fc2D9E75455a6;
+        uint16 pioneerTileId = 31;
+        tiles[pioneerTileId] = Tile({
+            worldTileId: pioneerTileId,
+            regionId: 0,
+            terrain: _getTerrain(pioneerTileId),
+            owner: pioneer,
+            settlementLevel: 0,
+            structureType: 0,
+            claimedAt: 1793367758
+        });
+        PlayerState storage pState = playerStates[pioneer];
+        pState.tilesClaimed = 1;
+        pState.wood = 160;
+        pState.stone = 120;
+        pState.food = 140;
+        pState.woodPerHour = 10;
+        pState.stonePerHour = 5;
+        pState.foodPerHour = 10;
+        pState.lastResourceSync = 1793367758;
+        pState.eventsContributed = 1;
+        pState.totalEventWifContributed = claimCost;
+        events[1].totalContributed = claimCost;
+
+        emit TileClaimed(pioneerTileId, pioneer, 0, claimCost);
+        emit EventContribution(1, pioneer, claimCost);
     }
 
     // ==========================================
@@ -883,6 +911,7 @@ contract WIFWorlds is Ownable {
         ps.tilesClaimed += 1;
 
         emit TileClaimed(worldTileId, msg.sender, regionId, claimCost);
+        _recordActiveEventProgress(msg.sender, claimCost, false);
     }
 
     /**
@@ -936,6 +965,7 @@ contract WIFWorlds is Ownable {
         _capResources(msg.sender);
 
         emit SettlementBuilt(worldTileId, msg.sender, currentSettlements + 1, cost);
+        _recordActiveEventProgress(msg.sender, cost, false);
     }
 
     /**
@@ -1002,6 +1032,7 @@ contract WIFWorlds is Ownable {
         }
 
         emit SettlementUpgraded(worldTileId, msg.sender, nextLevel, cost);
+        _recordActiveEventProgress(msg.sender, cost, false);
     }
 
     /**
@@ -1097,6 +1128,7 @@ contract WIFWorlds is Ownable {
         _capResources(msg.sender);
 
         emit StructureBuilt(worldTileId, msg.sender, structureType, cost);
+        _recordActiveEventProgress(msg.sender, cost, false);
     }
 
     /**
@@ -1117,24 +1149,7 @@ contract WIFWorlds is Ownable {
         _chargeWif(msg.sender, amount);
 
         // State update
-        ev.totalContributed += amount;
-        PlayerState storage ps = playerStates[msg.sender];
-        ps.eventsContributed += 1;
-        ps.totalEventWifContributed += amount;
-
-        emit EventContribution(eventId, msg.sender, amount);
-
-        // Check completion trigger
-        if (ev.totalContributed >= ev.targetAmount) {
-            ev.completed = true;
-            emit EventCompleted(eventId, ev.totalContributed);
-
-            // Automatically unlock target region if configured
-            if (ev.unlocksRegionId != 255 && !isRegionUnlocked[ev.unlocksRegionId]) {
-                isRegionUnlocked[ev.unlocksRegionId] = true;
-                emit RegionUnlocked(ev.unlocksRegionId, eventId);
-            }
-        }
+        _applyEventProgress(eventId, msg.sender, amount, true);
     }
 
     // ==========================================
@@ -1364,6 +1379,51 @@ contract WIFWorlds is Ownable {
 
     function _chargeWif(address from, uint256 amount) internal {
         wifToken.safeTransferFrom(from, treasury, amount);
+    }
+
+    function _recordActiveEventProgress(address player, uint256 amount, bool isDirectContribution) internal {
+        uint256 evId = activeEventId;
+        if (evId == 0) return;
+        WorldEvent storage ev = events[evId];
+        if (!ev.active || ev.completed) return;
+        _applyEventProgress(evId, player, amount, isDirectContribution);
+    }
+
+    function _applyEventProgress(
+        uint256 eventId,
+        address player,
+        uint256 amount,
+        bool isDirectContribution
+    ) internal {
+        WorldEvent storage ev = events[eventId];
+        ev.totalContributed += amount;
+        PlayerState storage ps = playerStates[player];
+        if (isDirectContribution || ps.eventsContributed == 0) {
+            ps.eventsContributed += 1;
+        }
+        ps.totalEventWifContributed += amount;
+
+        emit EventContribution(eventId, player, amount);
+
+        // Check completion trigger & auto-advance to next event
+        if (ev.totalContributed >= ev.targetAmount && !ev.completed) {
+            ev.completed = true;
+            emit EventCompleted(eventId, ev.totalContributed);
+
+            // Automatically unlock target region if configured
+            if (ev.unlocksRegionId != 255 && !isRegionUnlocked[ev.unlocksRegionId]) {
+                isRegionUnlocked[ev.unlocksRegionId] = true;
+                emit RegionUnlocked(ev.unlocksRegionId, eventId);
+            }
+
+            // Automatically advance activeEventId to the next uncompleted event (1 -> 2 -> 3 -> 4 -> 5)
+            for (uint256 nextId = 1; nextId <= 5; nextId++) {
+                if (events[nextId].active && !events[nextId].completed) {
+                    activeEventId = nextId;
+                    break;
+                }
+            }
+        }
     }
 
     function _validateSettlementPlacement(address player, uint16 newTileId, uint8 regionId) internal view {

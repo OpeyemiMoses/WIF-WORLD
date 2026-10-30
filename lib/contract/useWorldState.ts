@@ -12,6 +12,7 @@ import {
 } from "wagmi";
 import { parseUnits } from "viem";
 import {
+  LEGACY_WIF_WORLDS_CONTRACTS,
   ROBINHOOD_CHAIN_ID,
   ROBINHOOD_EXPLORER_URL,
   ROBINHOOD_RPC_URL,
@@ -533,6 +534,10 @@ export function useWorldData(
     try {
       const latestBlock = await publicClient.getBlockNumber();
       const fromBlock = latestBlock > 50_000n ? latestBlock - 50_000n : 0n;
+      const logAddresses = [
+        WIF_WORLDS_CONTRACT_ADDRESS,
+        ...LEGACY_WIF_WORLDS_CONTRACTS,
+      ];
 
       const [
         claimLogs,
@@ -544,43 +549,43 @@ export function useWorldData(
         harvestLogs,
       ] = await Promise.all([
         publicClient.getLogs({
-          address: WIF_WORLDS_CONTRACT_ADDRESS,
+          address: logAddresses,
           event: TILE_CLAIMED_EVENT,
           fromBlock,
           toBlock: latestBlock,
         }),
         publicClient.getLogs({
-          address: WIF_WORLDS_CONTRACT_ADDRESS,
+          address: logAddresses,
           event: SETTLEMENT_BUILT_EVENT,
           fromBlock,
           toBlock: latestBlock,
         }),
         publicClient.getLogs({
-          address: WIF_WORLDS_CONTRACT_ADDRESS,
+          address: logAddresses,
           event: SETTLEMENT_UPGRADED_EVENT,
           fromBlock,
           toBlock: latestBlock,
         }),
         publicClient.getLogs({
-          address: WIF_WORLDS_CONTRACT_ADDRESS,
+          address: logAddresses,
           event: STRUCTURE_BUILT_EVENT,
           fromBlock,
           toBlock: latestBlock,
         }),
         publicClient.getLogs({
-          address: WIF_WORLDS_CONTRACT_ADDRESS,
+          address: logAddresses,
           event: EVENT_CONTRIBUTION_EVENT,
           fromBlock,
           toBlock: latestBlock,
         }),
         publicClient.getLogs({
-          address: WIF_WORLDS_CONTRACT_ADDRESS,
+          address: logAddresses,
           event: REGION_UNLOCKED_EVENT,
           fromBlock,
           toBlock: latestBlock,
         }),
         publicClient.getLogs({
-          address: WIF_WORLDS_CONTRACT_ADDRESS,
+          address: logAddresses,
           event: RESOURCES_HARVESTED_EVENT,
           fromBlock,
           toBlock: latestBlock,
@@ -588,14 +593,25 @@ export function useWorldData(
       ]);
 
       const seenIds = new Set<string>();
+      const seenClaimKeys = new Set<string>();
       const items: VerifiedActivityItem[] = [];
       const pushUnique = (item: VerifiedActivityItem) => {
         if (seenIds.has(item.id)) return;
+        if (item.kind === "claim" && item.tileId !== undefined) {
+          const claimKey = `${item.player.toLowerCase()}-${item.tileId}`;
+          if (seenClaimKeys.has(claimKey)) return;
+          seenClaimKeys.add(claimKey);
+        }
         seenIds.add(item.id);
         items.push(item);
       };
 
-      for (const l of claimLogs) {
+      // Sort claimLogs ascending by blockNumber first so the original player txHash is preferred over constructor migration
+      const sortedClaimLogs = [...claimLogs].sort((a, b) =>
+        Number((a.blockNumber ?? 0n) - (b.blockNumber ?? 0n))
+      );
+
+      for (const l of sortedClaimLogs) {
         if (!l.transactionHash || !l.args.player) continue;
         pushUnique({
           id: `${l.transactionHash}-${l.logIndex}`,

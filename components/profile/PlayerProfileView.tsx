@@ -132,15 +132,15 @@ export function PlayerProfileView({
   };
 
   return (
-    <main className="flex-1 flex flex-col bg-obsidian relative overflow-hidden">
+    <main className="animate-page-enter flex-1 flex flex-col bg-obsidian text-ink-primary relative">
       {/* Background Castle Key Art & Crimson Glow */}
       <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-10"
+        className="pointer-events-none fixed inset-0 bg-cover bg-center opacity-10"
         style={{ backgroundImage: "url('/art/hero-kingdom.jpg')" }}
       />
-      <div className="pointer-events-none absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-crimson/10 blur-[140px]" />
+      <div className="pointer-events-none fixed left-1/4 top-1/4 h-96 w-96 rounded-full bg-crimson/10 blur-[140px]" />
 
-      <div className="relative z-10 mx-auto w-full max-w-[1440px] flex-1 px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8 py-8 pb-20 space-y-6">
         {/* Top Wallet Lookup Bar (Inspect any player on the shared map) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>

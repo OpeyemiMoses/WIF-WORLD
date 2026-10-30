@@ -87,7 +87,7 @@ export default function WorldActivityPage() {
   }, [activities, filter]);
 
   return (
-    <div className="animate-page-enter relative flex-1 overflow-y-auto bg-[#070B0E]">
+    <div className="animate-page-enter relative flex-1 bg-[#070B0E]">
       <PageCastleBackdrop />
 
       <div className="relative z-10 mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">

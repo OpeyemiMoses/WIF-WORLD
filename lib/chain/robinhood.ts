@@ -26,13 +26,17 @@ export const WIF_DECIMALS = 18;
 const rawContract = (
   process.env.NEXT_PUBLIC_GAME_CONTRACT_ADDRESS ||
   process.env.NEXT_PUBLIC_WIF_WORLDS_CONTRACT ||
-  "0x8936a00177AeB875c67C03EA019b1577aD8C0aa1"
+  "0xAa2dd131F596249755CCcdcc48447C1434AC109B"
 ).trim();
 
 export const WIF_WORLDS_CONTRACT_ADDRESS: `0x${string}` | null =
   /^0x[a-fA-F0-9]{40}$/.test(rawContract)
     ? (rawContract as `0x${string}`)
-    : "0x8936a00177AeB875c67C03EA019b1577aD8C0aa1";
+    : "0xAa2dd131F596249755CCcdcc48447C1434AC109B";
+
+export const LEGACY_WIF_WORLDS_CONTRACTS: `0x${string}`[] = [
+  "0x567e5362Db7D28E70B6216D78F25FE8Dd7F58E99",
+];
 
 export function isAuthorizedAdminAddress(
   address?: string | null
