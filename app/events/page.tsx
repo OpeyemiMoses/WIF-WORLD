@@ -131,10 +131,17 @@ export default function WorldEventsPage() {
   };
 
   return (
-    <main className="flex-1 flex flex-col bg-obsidian">
-      <div className="mx-auto w-full max-w-[1440px] flex-1 px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <main className="flex-1 flex flex-col bg-obsidian relative overflow-hidden">
+      {/* Background Castle Key Art & Crimson Glow */}
+      <div
+        className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-10"
+        style={{ backgroundImage: "url('/art/hero-kingdom.jpg')" }}
+      />
+      <div className="pointer-events-none absolute right-1/4 top-1/3 h-96 w-96 rounded-full bg-crimson/10 blur-[140px]" />
+
+      <div className="relative z-10 mx-auto w-full max-w-[1440px] flex-1 px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* HERO ACTIVE EVENT BANNER — Matches Panel 4 Reference */}
-        <section className="relative overflow-hidden rounded-3xl border border-white/[0.1] bg-[#111514] shadow-panel">
+        <section className="relative overflow-hidden rounded-3xl border border-white/[0.1] bg-[#111514]/92 shadow-panel backdrop-blur-md">
           {/* Citadel Artwork + Crimson Beacon Light Pillar on Right */}
           <div
             className="pointer-events-none absolute inset-0 bg-cover bg-right bg-no-repeat opacity-85"

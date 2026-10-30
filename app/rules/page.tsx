@@ -121,18 +121,35 @@ export default function GameRulesPage() {
 
   return (
     <main className="flex-1 flex flex-col bg-obsidian text-ink-primary">
-      {/* 1. HERO BANNER */}
-      <section className="relative border-b border-white/[0.08] bg-gradient-to-b from-[#141012] via-[#0E1110] to-obsidian py-14 lg:py-20 px-4 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(230,57,70,0.12),transparent_70%)] pointer-events-none" />
+      {/* 1. HERO BANNER — Matches Landing Page Castle Theme */}
+      <section className="relative overflow-hidden border-b border-white/[0.08] py-16 lg:py-24 px-4 sm:px-6 lg:px-8">
+        {/* Background Key Art (Floating Citadels at Crimson Dusk) */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/art/hero-kingdom.jpg')" }}
+        />
+
+        {/* Multi-Stage Vignette so text is crystal clear */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(11,13,12,0.72) 0%, rgba(11,13,12,0.92) 80%, #0B0D0C 100%)",
+          }}
+        />
+
+        {/* Ambient Crimson Glow */}
+        <div className="pointer-events-none absolute right-1/4 top-1/4 h-80 w-80 rounded-full bg-crimson/15 blur-[120px]" />
+
         <div className="mx-auto max-w-5xl text-center space-y-4 relative z-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-crimson/30 bg-[#221013]/80 px-4 py-1.5 text-xs font-semibold text-crimson-accent backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 rounded-full border border-crimson/35 bg-[#1B0F11]/85 px-4 py-1.5 text-xs font-semibold text-crimson-accent backdrop-blur-md shadow-panel">
             <BookOpen className="h-3.5 w-3.5" />
-            <span>Official Rules & Strategy Guide • Robinhood Chain ({ROBINHOOD_CHAIN_ID})</span>
+            <span>Official Rules &amp; Strategy Guide • Robinhood Chain ({ROBINHOOD_CHAIN_ID})</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
             How to Play &amp; Shape the{" "}
-            <span className="text-crimson-accent drop-shadow-[0_0_20px_rgba(230,57,70,0.4)]">
+            <span className="text-crimson-accent drop-shadow-[0_0_24px_rgba(230,57,70,0.45)]">
               Living Map
             </span>
           </h1>
@@ -147,37 +164,37 @@ export default function GameRulesPage() {
           <div className="pt-3 flex flex-wrap items-center justify-center gap-3 text-xs">
             <a
               href="#quick-start"
-              className="rounded-lg border border-white/[0.1] bg-surface px-3 py-1.5 font-semibold text-ink-primary hover:border-crimson/50 hover:text-white transition-all"
+              className="rounded-xl border border-white/[0.1] bg-[#111514]/88 backdrop-blur-md px-3.5 py-2 font-semibold text-ink-primary hover:border-crimson/50 hover:text-white transition-all shadow-panel"
             >
               1. Quick Start
             </a>
             <a
               href="#progression"
-              className="rounded-lg border border-white/[0.1] bg-surface px-3 py-1.5 font-semibold text-ink-primary hover:border-crimson/50 hover:text-white transition-all"
+              className="rounded-xl border border-white/[0.1] bg-[#111514]/88 backdrop-blur-md px-3.5 py-2 font-semibold text-ink-primary hover:border-crimson/50 hover:text-white transition-all shadow-panel"
             >
               2. 3-Tier Progression
             </a>
             <a
               href="#anti-whale"
-              className="rounded-lg border border-white/[0.1] bg-surface px-3 py-1.5 font-semibold text-ink-primary hover:border-crimson/50 hover:text-white transition-all"
+              className="rounded-xl border border-white/[0.1] bg-[#111514]/88 backdrop-blur-md px-3.5 py-2 font-semibold text-ink-primary hover:border-crimson/50 hover:text-white transition-all shadow-panel"
             >
               3. Territory Formula
             </a>
             <a
               href="#structures"
-              className="rounded-lg border border-white/[0.1] bg-surface px-3 py-1.5 font-semibold text-ink-primary hover:border-crimson/50 hover:text-white transition-all"
+              className="rounded-xl border border-white/[0.1] bg-[#111514]/88 backdrop-blur-md px-3.5 py-2 font-semibold text-ink-primary hover:border-crimson/50 hover:text-white transition-all shadow-panel"
             >
               4. Buildings &amp; Tiers
             </a>
             <a
               href="#calculator"
-              className="rounded-lg border border-crimson/40 bg-crimson/15 px-3 py-1.5 font-semibold text-crimson-accent hover:bg-crimson/25 transition-all"
+              className="rounded-xl border border-crimson/35 bg-crimson/15 px-3.5 py-2 font-bold text-crimson-accent hover:brightness-110 transition-all shadow-panel"
             >
-              5. Interactive Calculator
+              5. Territory Calculator
             </a>
             <a
               href="#faq"
-              className="rounded-lg border border-white/[0.1] bg-surface px-3 py-1.5 font-semibold text-ink-primary hover:border-crimson/50 hover:text-white transition-all"
+              className="rounded-xl border border-white/[0.1] bg-[#111514]/88 backdrop-blur-md px-3.5 py-2 font-semibold text-ink-primary hover:border-crimson/50 hover:text-white transition-all shadow-panel"
             >
               6. FAQ
             </a>
