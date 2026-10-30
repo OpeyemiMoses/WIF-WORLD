@@ -25,6 +25,7 @@ import { cn, formatWif, shortenAddress } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/world", label: "World" },
   { href: "/events", label: "Events" },
+  { href: "/rules", label: "How to Play" },
   { href: "/profile", label: "Profile" },
 ];
 
