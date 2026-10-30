@@ -13,20 +13,28 @@ import {
   ExternalLink,
   LogOut,
   Menu,
+  ShieldAlert,
   User,
   Wallet,
   X,
 } from "lucide-react";
 import { WifTokenEmblem, WifWorldsLogo } from "@/components/brand/WifWorldsLogo";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { useRobinhoodWallet } from "@/lib/contract/useWorldState";
-import { explorerAddressUrl, ROBINHOOD_CHAIN_ID } from "@/lib/chain/robinhood";
+import {
+  explorerAddressUrl,
+  isAuthorizedAdminAddress,
+  ROBINHOOD_CHAIN_ID,
+} from "@/lib/chain/robinhood";
 import { cn, formatWif, shortenAddress } from "@/lib/utils";
 
-const NAV_ITEMS = [
+const PUBLIC_NAV_ITEMS = [
   { href: "/world", label: "World" },
   { href: "/events", label: "Events" },
-  { href: "/rules", label: "How to Play" },
+  { href: "/missions", label: "Missions" },
+  { href: "/activity", label: "Activity" },
   { href: "/profile", label: "Profile" },
+  { href: "/rules", label: "How to Play" },
 ];
 
 export function TopNav() {
@@ -49,6 +57,21 @@ export function TopNav() {
   const [connectError, setConnectError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const isAdminWallet = Boolean(
+    isConnected && address && isAuthorizedAdminAddress(address)
+  );
+
+  // Immediately revoke any server-side admin session if wallet disconnects or is not the Treasury Admin
+  useEffect(() => {
+    if (!isAdminWallet) {
+      fetch("/api/admin/auth", { method: "DELETE" }).catch(() => {});
+    }
+  }, [isAdminWallet, address]);
+
+  const navItems = isAdminWallet
+    ? [...PUBLIC_NAV_ITEMS, { href: "/admin", label: "Admin" }]
+    : PUBLIC_NAV_ITEMS;
 
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
@@ -106,23 +129,29 @@ export function TopNav() {
             </Link>
 
             <nav className="hidden md:flex items-center gap-1" aria-label="Main">
-              {NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/" && pathname?.startsWith(item.href));
+                const isAdminTab = item.href === "/admin";
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "relative px-4 py-2 text-sm font-semibold transition-colors rounded-lg",
-                      isActive
+                      "relative px-3.5 py-2 text-sm font-semibold transition-colors rounded-lg inline-flex items-center gap-1.5",
+                      isAdminTab
+                        ? isActive
+                          ? "bg-amber-400/15 text-amber-300 border border-amber-400/35"
+                          : "text-amber-300/90 hover:text-amber-200 hover:bg-amber-400/10"
+                        : isActive
                         ? "text-crimson-accent"
                         : "text-ink-secondary hover:text-ink-primary hover:bg-white/[0.03]"
                     )}
                   >
+                    {isAdminTab && <ShieldAlert className="h-3.5 w-3.5" />}
                     {item.label}
-                    {isActive && (
+                    {isActive && !isAdminTab && (
                       <span className="absolute inset-x-3 -bottom-[13px] h-[2px] rounded-full bg-crimson-accent shadow-[0_0_10px_#FF4D5A]" />
                     )}
                   </Link>
@@ -131,8 +160,9 @@ export function TopNav() {
             </nav>
           </div>
 
-          {/* Right: Network Validation + Wallet Pill */}
+          {/* Right: Network Validation + Notification Bell + Wallet Pill */}
           <div className="flex items-center gap-2.5 sm:gap-3">
+            <NotificationCenter />
             {isConnected && isWrongNetwork && (
               <button
                 type="button"
@@ -291,7 +321,7 @@ export function TopNav() {
         {/* Mobile navigation drawer */}
         {mobileNavOpen && (
           <div className="md:hidden border-b border-white/[0.08] bg-[#0E1110] px-4 py-3 space-y-1">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const isActive = pathname?.startsWith(item.href);
               return (
                 <Link

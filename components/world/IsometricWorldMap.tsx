@@ -84,7 +84,11 @@ export function IsometricWorldMap({
     distance: DEFAULT_CAMERA.distance,
     targetDistance: DEFAULT_CAMERA.distance,
     targetX: DEFAULT_CAMERA.targetX,
+    targetY: 0.85,
     targetZ: DEFAULT_CAMERA.targetZ,
+    goalTargetX: DEFAULT_CAMERA.targetX,
+    goalTargetY: 0.85,
+    goalTargetZ: DEFAULT_CAMERA.targetZ,
     velAzimuth: 0,   // rad/sec
     velElevation: 0, // rad/sec
   });
@@ -163,8 +167,12 @@ export function IsometricWorldMap({
         if (Math.abs(phys.velElevation) < 0.002) phys.velElevation = 0;
       }
 
-      // Smoothly interpolate zoom distance
-      phys.distance += (phys.targetDistance - phys.distance) * Math.min(1, dtSec * 12);
+      // Smoothly interpolate zoom distance & camera target position (for double-click zoom-to-location)
+      const lerpFactor = Math.min(1, dtSec * 10.5);
+      phys.distance += (phys.targetDistance - phys.distance) * lerpFactor;
+      phys.targetX += (phys.goalTargetX - phys.targetX) * lerpFactor;
+      phys.targetY += (phys.goalTargetY - phys.targetY) * lerpFactor;
+      phys.targetZ += (phys.goalTargetZ - phys.targetZ) * lerpFactor;
 
       const widthCss = container.clientWidth || 1;
       const heightCss = container.clientHeight || 1;
@@ -185,6 +193,7 @@ export function IsometricWorldMap({
           elevation: phys.elevation,
           distance: phys.distance,
           targetX: phys.targetX,
+          targetY: phys.targetY,
           targetZ: phys.targetZ,
         },
         elapsedSec,
@@ -231,15 +240,16 @@ export function IsometricWorldMap({
     p.azimuth = DEFAULT_CAMERA.azimuth;
     p.elevation = DEFAULT_CAMERA.elevation;
     p.targetDistance = DEFAULT_CAMERA.distance;
-    p.targetX = DEFAULT_CAMERA.targetX;
-    p.targetZ = DEFAULT_CAMERA.targetZ;
+    p.goalTargetX = DEFAULT_CAMERA.targetX;
+    p.goalTargetY = 0.85;
+    p.goalTargetZ = DEFAULT_CAMERA.targetZ;
     p.velAzimuth = 0;
     p.velElevation = 0;
   }, []);
 
   const zoomBy = useCallback((delta: number) => {
     const p = physicsRef.current;
-    p.targetDistance = Math.max(13.5, Math.min(44.0, p.targetDistance + delta));
+    p.targetDistance = Math.max(9.5, Math.min(44.0, p.targetDistance + delta));
   }, []);
 
   // Prevent browser page scroll when zooming on canvas
@@ -250,7 +260,7 @@ export function IsometricWorldMap({
       e.preventDefault();
       const delta = e.deltaY * 0.022;
       const p = physicsRef.current;
-      p.targetDistance = Math.max(13.5, Math.min(44.0, p.targetDistance + delta));
+      p.targetDistance = Math.max(9.5, Math.min(44.0, p.targetDistance + delta));
     };
     canvas.addEventListener("wheel", onWheel, { passive: false });
     return () => canvas.removeEventListener("wheel", onWheel);
@@ -345,14 +355,16 @@ export function IsometricWorldMap({
       const panScale = phys.distance * 0.0014;
       const cosA = Math.cos(phys.azimuth);
       const sinA = Math.sin(phys.azimuth);
-      phys.targetX = Math.max(
+      phys.goalTargetX = Math.max(
         -12,
-        Math.min(12, phys.targetX - (dx * cosA + dy * sinA) * panScale)
+        Math.min(12, phys.goalTargetX - (dx * cosA + dy * sinA) * panScale)
       );
-      phys.targetZ = Math.max(
+      phys.goalTargetZ = Math.max(
         -12,
-        Math.min(12, phys.targetZ - (-dx * sinA + dy * cosA) * panScale)
+        Math.min(12, phys.goalTargetZ - (-dx * sinA + dy * cosA) * panScale)
       );
+      phys.targetX = phys.goalTargetX;
+      phys.targetZ = phys.goalTargetZ;
     } else {
       // Direct 1:1 Gyro Turntable Orbit + Vertical Tilt
       phys.azimuth -= dx * 0.0068;
@@ -413,6 +425,51 @@ export function IsometricWorldMap({
     }
   };
 
+  /**
+   * Double-click anywhere on the 3D island -> smoothly fly camera target there and zoom in close
+   * so the player can inspect the terrain, trees, settlements, or structures at that exact spot.
+   */
+  const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const container = containerRef.current;
+    const renderer = rendererRef.current;
+    if (!container || !renderer) return;
+
+    const rect = container.getBoundingClientRect();
+    const hit = renderer.pickSurfaceAtScreen(
+      e.clientX - rect.left,
+      e.clientY - rect.top,
+      rect.width,
+      rect.height
+    );
+    if (!hit) return;
+
+    if (hit.tileId !== null) {
+      onSelectTile(hit.tileId);
+    }
+
+    const phys = physicsRef.current;
+    phys.velAzimuth = 0;
+    phys.velElevation = 0;
+
+    const distToSpot = Math.hypot(
+      phys.goalTargetX - hit.wx,
+      phys.goalTargetZ - hit.wz
+    );
+
+    // If already zoomed in close on this exact spot, double-clicking again smoothly zooms back out
+    if (phys.targetDistance <= 13.5 && distToSpot < 1.2) {
+      phys.goalTargetX = DEFAULT_CAMERA.targetX;
+      phys.goalTargetY = 0.85;
+      phys.goalTargetZ = DEFAULT_CAMERA.targetZ;
+      phys.targetDistance = DEFAULT_CAMERA.distance;
+    } else {
+      phys.goalTargetX = Math.max(-11.5, Math.min(11.5, hit.wx));
+      phys.goalTargetY = Math.max(0.4, Math.min(4.2, hit.wy));
+      phys.goalTargetZ = Math.max(-11.5, Math.min(11.5, hit.wz));
+      phys.targetDistance = 11.2;
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -428,6 +485,7 @@ export function IsometricWorldMap({
         onPointerMove={handlePointerMove}
         onPointerUp={(e) => finishPointer(e, false)}
         onPointerCancel={(e) => finishPointer(e, true)}
+        onDoubleClick={handleDoubleClick}
         onContextMenu={(e) => e.preventDefault()}
         className="block w-full h-full touch-none"
       />

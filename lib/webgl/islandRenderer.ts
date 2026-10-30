@@ -56,8 +56,9 @@ interface GLMeshBuffers {
 export interface CameraOrbitState {
   azimuth: number;   // Horizontal orbit angle in radians (unbounded 360°)
   elevation: number; // Vertical tilt angle in radians (0.36 .. 1.18)
-  distance: number;  // Distance from target (14 .. 48)
+  distance: number;  // Distance from target (10 .. 48)
   targetX: number;
+  targetY?: number;
   targetZ: number;
 }
 
@@ -369,13 +370,14 @@ export class IslandWebGLRenderer {
     }
 
     // Compute 3D camera eye position from spherical orbit parameters
+    const focusY = cam.targetY ?? 0.85;
     const cosEl = Math.cos(cam.elevation);
     const sinEl = Math.sin(cam.elevation);
     const eyeX = cam.targetX + Math.sin(cam.azimuth) * cosEl * cam.distance;
-    const eyeY = 1.2 + sinEl * cam.distance;
+    const eyeY = focusY + 0.35 + sinEl * cam.distance;
     const eyeZ = cam.targetZ + Math.cos(cam.azimuth) * cosEl * cam.distance;
     const eye: Vec3 = [eyeX, eyeY, eyeZ];
-    const target: Vec3 = [cam.targetX, 0.85, cam.targetZ];
+    const target: Vec3 = [cam.targetX, focusY, cam.targetZ];
 
     perspectiveMat4(
       this.projMat,
@@ -601,14 +603,14 @@ export class IslandWebGLRenderer {
 
   /**
    * Exact 3D Raycast against the sculpted island heightfield & ocean plane.
-   * Returns the world tile ID (`tile.id`) under `(localX, localY)` in CSS pixels.
+   * Returns the world tile ID (`tile.id`) and 3D hit coordinates under `(localX, localY)` in CSS pixels.
    */
-  pickTileAtScreen(
+  pickSurfaceAtScreen(
     localX: number,
     localY: number,
     widthCss: number,
     heightCss: number
-  ): number | null {
+  ): { tileId: number | null; wx: number; wy: number; wz: number } | null {
     if (widthCss <= 0 || heightCss <= 0 || this.currentTiles.length === 0) {
       return null;
     }
@@ -655,15 +657,44 @@ export class IslandWebGLRenderer {
         }
         const hitX = origin[0] + dir[0] * hi;
         const hitZ = origin[2] + dir[2] * hi;
+        const hitY = Math.max(
+          0.35,
+          sampleIslandSurface(hitX, hitZ, this.tileGrid).height
+        );
         const cell = worldToGridIndices(hitX, hitZ);
-        if (!cell) return null;
+        if (!cell) {
+          return { tileId: null, wx: hitX, wy: hitY, wz: hitZ };
+        }
         const hitTile = this.tileGrid[cell.row]?.[cell.col];
-        return hitTile ? hitTile.id : null;
+        if (hitTile) {
+          const center = tileCenterWorld(cell.row, cell.col);
+          const centerY = Math.max(
+            0.45,
+            sampleIslandSurface(center.wx, center.wz, this.tileGrid).height
+          );
+          return {
+            tileId: hitTile.id,
+            wx: center.wx,
+            wy: centerY,
+            wz: center.wz,
+          };
+        }
+        return { tileId: null, wx: hitX, wy: hitY, wz: hitZ };
       }
       prevT = t;
     }
 
     return null;
+  }
+
+  pickTileAtScreen(
+    localX: number,
+    localY: number,
+    widthCss: number,
+    heightCss: number
+  ): number | null {
+    const hit = this.pickSurfaceAtScreen(localX, localY, widthCss, heightCss);
+    return hit ? hit.tileId : null;
   }
 
   /**

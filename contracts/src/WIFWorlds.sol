@@ -85,6 +85,12 @@ contract WIFWorlds is Ownable {
 
     IERC20 public immutable wifToken;
     address public treasury;
+    address public admin;
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin || msg.sender == owner(), "Unauthorized: admin only");
+        _;
+    }
 
     // 8x tuned $WIF costs
     uint256 public claimCost = 6.25 ether;
@@ -120,26 +126,29 @@ contract WIFWorlds is Ownable {
     event EventContribution(uint256 indexed eventId, address indexed player, uint256 amount);
     event EventCompleted(uint256 indexed eventId, uint256 totalContributed);
     event RegionUnlocked(uint8 indexed regionId, uint256 indexed triggeredByEventId);
+    event EventConfigured(uint256 indexed eventId, string title, uint256 targetAmount, uint8 unlocksRegionId, bool active);
     event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
+    event AdminUpdated(address indexed oldAdmin, address indexed newAdmin);
     event CostsUpdated(uint256 newClaimCost, uint256 newSettlement1Cost);
 
     constructor(address _wifToken, address _treasury) Ownable(msg.sender) {
         require(_wifToken != address(0), "Invalid token address");
         wifToken = IERC20(_wifToken);
         treasury = _treasury == address(0) ? msg.sender : _treasury;
+        admin = treasury;
 
         // Initialize Region 0 (The Heartlands)
         isRegionUnlocked[0] = true;
         _initRegion0();
 
-        // Initialize Region 1 (The Wild Frontier - locked until Beacon milestone)
+        // Initialize Region 1 (The Wild Frontier - locked until Great Bridge / Beacon milestone)
         isRegionUnlocked[1] = false;
         _initRegion1();
 
-        // Initialize Event #1: Build the Beacon (unlocks Region 1 upon 100% completion)
+        // Initialize Event #1: The Great Bridge (unlocks Region 1 upon 100% completion)
         events[1] = WorldEvent({
-            title: "Build the Beacon",
-            targetWorldTileId: 3, // (3, 0) Northern Spire in Region 0
+            title: "The Great Bridge",
+            targetWorldTileId: 3, // (3, 0) Northern Crossing Spire in Region 0
             unlocksRegionId: 1,    // Automatically unlocks Region 1
             targetAmount: 1250 ether,
             totalContributed: 0,
@@ -555,14 +564,53 @@ contract WIFWorlds is Ownable {
     }
 
     // ==========================================
-    // Administration
+    // Administration (Protected by onlyAdmin)
     // ==========================================
 
-    function setTreasury(address _newTreasury) external onlyOwner {
+    function setAdmin(address _newAdmin) external onlyAdmin {
+        require(_newAdmin != address(0), "Invalid admin address");
+        address old = admin;
+        admin = _newAdmin;
+        emit AdminUpdated(old, _newAdmin);
+    }
+
+    function setTreasury(address _newTreasury) external onlyAdmin {
         require(_newTreasury != address(0), "Invalid treasury address");
         address old = treasury;
         treasury = _newTreasury;
         emit TreasuryUpdated(old, _newTreasury);
+    }
+
+    function configureEvent(
+        uint256 eventId,
+        string calldata title,
+        uint16 targetWorldTileId,
+        uint8 unlocksRegionId,
+        uint256 targetAmount,
+        uint64 deadline,
+        bool active,
+        bool setAsActiveEvent
+    ) external onlyAdmin {
+        require(eventId > 0, "Invalid event ID");
+        require(targetAmount > 0, "Target must be > 0");
+        WorldEvent storage ev = events[eventId];
+        ev.title = title;
+        ev.targetWorldTileId = targetWorldTileId;
+        ev.unlocksRegionId = unlocksRegionId;
+        ev.targetAmount = targetAmount;
+        ev.deadline = deadline;
+        ev.active = active;
+        if (setAsActiveEvent) {
+            activeEventId = eventId;
+        }
+        emit EventConfigured(eventId, title, targetAmount, unlocksRegionId, active);
+    }
+
+    function setRegionUnlocked(uint8 regionId, bool unlocked) external onlyAdmin {
+        isRegionUnlocked[regionId] = unlocked;
+        if (unlocked) {
+            emit RegionUnlocked(regionId, activeEventId);
+        }
     }
 
     function setCosts(
@@ -575,7 +623,7 @@ contract WIFWorlds is Ownable {
         uint256 _outpost,
         uint256 _workshop,
         uint256 _beacon
-    ) external onlyOwner {
+    ) external onlyAdmin {
         claimCost = _claim;
         settlementSlot1Cost = _settlement1;
         settlementSlot2Cost = _settlement2;

@@ -17,13 +17,29 @@ export const WIF_TOKEN_ADDRESS = (process.env.NEXT_PUBLIC_WIF_TOKEN_ADDRESS ||
 export const TREASURY_ADDRESS = (process.env.NEXT_PUBLIC_TREASURY_ADDRESS ||
   "0x479253b82eb63eb36f140ecabf0237cc338084e7") as `0x${string}`;
 
+export const ADMIN_WALLET_ADDRESS = (process.env
+  .NEXT_PUBLIC_ADMIN_WALLET_ADDRESS ||
+  TREASURY_ADDRESS) as `0x${string}`;
+
 export const WIF_DECIMALS = 18;
 
-const rawContract = (process.env.NEXT_PUBLIC_WIF_WORLDS_CONTRACT || "").trim();
+const rawContract = (
+  process.env.NEXT_PUBLIC_GAME_CONTRACT_ADDRESS ||
+  process.env.NEXT_PUBLIC_WIF_WORLDS_CONTRACT ||
+  ""
+).trim();
+
 export const WIF_WORLDS_CONTRACT_ADDRESS: `0x${string}` | null =
   /^0x[a-fA-F0-9]{40}$/.test(rawContract)
     ? (rawContract as `0x${string}`)
     : null;
+
+export function isAuthorizedAdminAddress(
+  address?: string | null
+): boolean {
+  if (!address || !ADMIN_WALLET_ADDRESS) return false;
+  return address.trim().toLowerCase() === ADMIN_WALLET_ADDRESS.trim().toLowerCase();
+}
 
 export const robinhoodChain = defineChain({
   id: ROBINHOOD_CHAIN_ID,
@@ -60,4 +76,3 @@ export function explorerAddressUrl(address: string): string {
 export function explorerTokenUrl(address: string = WIF_TOKEN_ADDRESS): string {
   return `${ROBINHOOD_EXPLORER_URL}/token/${address}`;
 }
-

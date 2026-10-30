@@ -270,4 +270,27 @@ contract WIFWorldsTest is Test {
         assertEq(game.getTile(49).owner, alice);
         assertEq(game.getTile(49).regionId, 1);
     }
+
+    function test_AdminAuthorizationAndEventManagement() public {
+        assertEq(game.admin(), treasury);
+
+        // Ordinary player (alice) cannot configure events or unlock regions
+        vm.startPrank(alice);
+        vm.expectRevert("Unauthorized: admin only");
+        game.configureEvent(2, "The Great Harvest", 24, 255, 800 ether, 0, true, true);
+
+        vm.expectRevert("Unauthorized: admin only");
+        game.setRegionUnlocked(1, true);
+        vm.stopPrank();
+
+        // Treasury admin wallet CAN configure events
+        vm.prank(treasury);
+        game.configureEvent(2, "The Great Harvest", 24, 255, 800 ether, 0, true, true);
+
+        assertEq(game.activeEventId(), 2);
+        (string memory title, , , uint256 targetAmount, , , , bool active) = game.getEvent(2);
+        assertEq(title, "The Great Harvest");
+        assertEq(targetAmount, 800 ether);
+        assertTrue(active);
+    }
 }

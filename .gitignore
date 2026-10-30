@@ -31,3 +31,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Local server runtime store
+data/*.json
+
+

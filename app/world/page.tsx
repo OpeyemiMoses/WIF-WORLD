@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
   AlertTriangle,
   ArrowUpCircle,
+  BookOpen,
   Castle,
   CheckCircle2,
   ChevronRight,
@@ -28,6 +29,7 @@ import {
 import { IsometricWorldMap } from "@/components/world/IsometricWorldMap";
 import { IsometricTilePreview } from "@/components/tiles/IsometricTilePreview";
 import { BuildActionModal } from "@/components/build/BuildActionModal";
+import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { WifTokenEmblem } from "@/components/brand/WifWorldsLogo";
 import {
   useRobinhoodWallet,
@@ -67,11 +69,30 @@ export default function WorldScreen() {
   const [buildModalInitialAction, setBuildModalInitialAction] =
     useState<WorldActionKind>("claim");
   const [activeDrawer, setActiveDrawer] = useState<HudDrawerTab>(null);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [visitedBuilderAddress, setVisitedBuilderAddress] = useState<
     `0x${string}` | null
   >(null);
 
   const { address, effectivePlayerAddress } = useRobinhoodWallet();
+
+  // Check if wallet has completed/skipped onboarding; open once for new pioneers
+  useEffect(() => {
+    if (!address) return;
+    let cancelled = false;
+    fetch(`/api/onboarding?wallet=${encodeURIComponent(address)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.onboarding) return;
+        if (!data.onboarding.completed && !data.onboarding.skipped) {
+          setOnboardingOpen(true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
   const {
     isContractDeployed,
     contractAddress,
@@ -394,9 +415,9 @@ export default function WorldScreen() {
           </div>
         </div>
 
-        {/* Top-Center Region Switcher + Live Resource Economy Bar */}
-        <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 top-4 z-20 flex-col items-center gap-2">
-          <div className="flex items-center gap-1 rounded-xl border border-white/[0.1] bg-[#101413]/92 p-1 backdrop-blur-md shadow-panel">
+        {/* Top Region Switcher + Live Resource Economy Bar (Strictly bounded between Left Card and Right Camera Toolbar so it never overlaps) */}
+        <div className="hidden md:flex absolute left-[364px] right-[56px] top-4 z-20 flex-col items-end xl:items-center gap-2 pointer-events-none">
+          <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1 rounded-xl border border-white/[0.1] bg-[#101413]/92 p-1 backdrop-blur-md shadow-panel">
             {REGIONS.filter((r) => r.mvpPlayable).map((reg) => {
               const unlocked = Boolean(regionUnlockedMap[reg.id]);
               const selected = activeRegionId === reg.id;
@@ -422,15 +443,24 @@ export default function WorldScreen() {
               );
             })}
             <span
-              className="hidden xl:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] text-ink-dim"
+              className="hidden 2xl:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] text-ink-dim"
               title="The Highlands & The Crossroads unlock in future world phases"
             >
               +2 Charted Regions
             </span>
+            <button
+              type="button"
+              onClick={() => setOnboardingOpen(true)}
+              className="inline-flex items-center gap-1 rounded-lg border border-amber-300/25 bg-amber-400/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200 hover:bg-amber-400/20 transition-colors ml-1"
+              title="Open 7-Step Guided Onboarding Tutorial"
+            >
+              <BookOpen className="h-3 w-3" />
+              <span>Tutorial</span>
+            </button>
           </div>
 
           {/* Live In-Game Resource Ticker Pill (Wood, Stone, Food + Harvest CTA) */}
-          <div className="flex items-center gap-3 rounded-xl border border-white/[0.1] bg-[#101413]/92 px-3.5 py-1.5 text-xs backdrop-blur-md shadow-panel">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-white/[0.1] bg-[#101413]/92 px-3.5 py-1.5 text-xs backdrop-blur-md shadow-panel">
             <div
               className="flex items-center gap-1.5"
               title="Wood — Construction Material (Produced by Lumber Camps)"
@@ -1135,6 +1165,20 @@ export default function WorldScreen() {
         isContractDeployed={isContractDeployed}
         contractAddress={contractAddress}
         treasuryAddress={treasuryAddress}
+        onRefreshWorld={refreshAllWorldState}
+      />
+
+      {/* Phase 3 Guided 7-Step Pioneer Onboarding Modal */}
+      <OnboardingModal
+        open={onboardingOpen}
+        onClose={() => setOnboardingOpen(false)}
+        tiles={tiles}
+        selectedTileId={selectedTileId}
+        onSelectTile={setSelectedTileId}
+        playerStats={playerStats}
+        missions={missions}
+        costs={costs}
+        isContractDeployed={isContractDeployed}
         onRefreshWorld={refreshAllWorldState}
       />
     </div>

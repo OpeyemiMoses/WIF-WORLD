@@ -875,6 +875,17 @@ export function evaluateMissions(
 
   return [
     {
+      id: "first-settlement",
+      category: "personal",
+      title: "Establish Your First Settlement",
+      description:
+        "Claim an eligible Heartlands tile and found your first Settlement Hall (Lv. 1) on Robinhood Chain.",
+      rewardLabel: "+3 Territory Cap • +20W/+10S/+20F per hr • Unlocks Production Buildings",
+      current: Math.min(1, stats.settlementsBuilt),
+      target: 1,
+      completed: stats.settlementsBuilt >= 1,
+    },
+    {
       id: "first-farm-or-camp",
       category: "personal",
       title: "Establish Resource Production",
@@ -932,10 +943,10 @@ export function evaluateMissions(
     {
       id: "regional-beacon",
       category: "regional",
-      title: "Help Complete the Regional Beacon",
+      title: "Support The Great Bridge World Event",
       description:
-        "Raise a Signal Beacon on high ground or contribute $WIF to the shared 'Build the Beacon' regional project.",
-      rewardLabel: "Unlocks Lv. 5 Sovereign Capital & Region 1: The Wild Frontier",
+        "Raise a Signal Beacon on high ground or contribute $WIF to 'The Great Bridge' regional project spanning the Northern Strait.",
+      rewardLabel: "Unlocks Lv. 5 Sovereign Capital & Region 2: The Wild Frontier",
       current:
         stats.beaconsBuilt > 0 || stats.eventsContributedCount > 0 || worldEvent.completed
           ? 1

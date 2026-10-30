@@ -7,16 +7,21 @@ import {
   ExternalLink,
   Flame,
   Info,
+  Landmark,
   Loader2,
   Lock,
   MapPin,
+  Mountain,
   Shield,
   Sparkles,
+  Trees,
+  Wheat,
   X,
 } from "lucide-react";
 import { WifTokenEmblem } from "@/components/brand/WifWorldsLogo";
 import { TransactionStatusCallout } from "@/components/build/BuildActionModal";
 import { FeatureFooterStrip } from "@/components/layout/FeatureFooterStrip";
+import { PageCastleBackdrop } from "@/components/layout/PageCastleBackdrop";
 import {
   explorerAddressUrl,
   explorerTxUrl,
@@ -37,6 +42,53 @@ import {
 } from "@/lib/utils";
 
 const PRESET_AMOUNTS = ["5", "10", "25", "50"];
+
+const FUTURE_EVENT_TEMPLATES = [
+  {
+    id: "the-great-harvest",
+    icon: Wheat,
+    title: "The Great Harvest",
+    region: "The Heartlands • Fertile Plains",
+    phase: "Event Template #2",
+    requiredWif: "750 $WIF",
+    materials: "800 Wood • 400 Stone • 1,800 Food",
+    description:
+      "Unite regional Farms and granaries across The Heartlands to stockpile winter provisions and permanently boost regional Food storage capacity.",
+  },
+  {
+    id: "the-frontier",
+    icon: Compass,
+    title: "The Frontier",
+    region: "Region 2 • The Wild Frontier",
+    phase: "Event Template #3",
+    requiredWif: "1,000 $WIF",
+    materials: "1,500 Wood • 1,200 Stone • 900 Food",
+    description:
+      "Establish fortified frontier outposts and supply roads across the newly unlocked Wild Frontier to open deep quarry ridges.",
+  },
+  {
+    id: "the-forgotten-monument",
+    icon: Landmark,
+    title: "The Forgotten Monument",
+    region: "Central Sanctuary • Tile (3, 3)",
+    phase: "Event Template #4",
+    requiredWif: "1,250 $WIF",
+    materials: "1,000 Wood • 2,000 Stone • 800 Food",
+    description:
+      "Excavate and restore the ancient obsidian monolith at the center of the island to awaken realm-wide Signal Beacon resonance.",
+  },
+  {
+    id: "the-northern-passage",
+    icon: Mountain,
+    title: "The Northern Passage",
+    region: "Region 3 • The Highlands",
+    phase: "Event Template #5",
+    requiredWif: "1,500 $WIF",
+    materials: "1,600 Wood • 2,400 Stone • 1,200 Food",
+    description:
+      "Carve a high-altitude stone causeway through the northern crags to unlock Region 3: The Highlands for master builders.",
+  },
+];
 
 export default function WorldEventsPage() {
   const [contributeModalOpen, setContributeModalOpen] = useState(false);
@@ -75,7 +127,7 @@ export default function WorldEventsPage() {
     resetTxState,
     approveExactWif,
     executeGameAction,
-  } = useWorldActionExecutor(handleFullRefresh);
+  } = useWorldActionExecutor(handleFullRefresh, address);
 
   const eventContributions = useMemo(
     () => activities.filter((a) => a.kind === "event"),
@@ -130,19 +182,18 @@ export default function WorldEventsPage() {
     });
   };
 
+  const displayTitle =
+    worldEvent.title === "Build the Beacon"
+      ? "The Great Bridge"
+      : worldEvent.title;
+
   return (
-    <main className="flex-1 flex flex-col bg-obsidian relative overflow-hidden">
-      {/* Background Castle Key Art & Crimson Glow */}
-      <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-10"
-        style={{ backgroundImage: "url('/art/hero-kingdom.jpg')" }}
-      />
-      <div className="pointer-events-none absolute right-1/4 top-1/3 h-96 w-96 rounded-full bg-crimson/10 blur-[140px]" />
+    <main className="flex-1 flex flex-col bg-[#070B0E] relative overflow-y-auto">
+      <PageCastleBackdrop />
 
       <div className="relative z-10 mx-auto w-full max-w-[1440px] flex-1 px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* HERO ACTIVE EVENT BANNER — Matches Panel 4 Reference */}
-        <section className="relative overflow-hidden rounded-3xl border border-white/[0.1] bg-[#111514]/92 shadow-panel backdrop-blur-md">
-          {/* Citadel Artwork + Crimson Beacon Light Pillar on Right */}
+        {/* HERO ACTIVE EVENT BANNER — EVENT 1: THE GREAT BRIDGE */}
+        <section className="relative overflow-hidden rounded-3xl border border-amber-200/20 bg-[#111514]/92 shadow-[0_24px_80px_rgba(0,0,0,0.78)] backdrop-blur-xl">
           <div
             className="pointer-events-none absolute inset-0 bg-cover bg-right bg-no-repeat opacity-85"
             style={{
@@ -150,7 +201,7 @@ export default function WorldEventsPage() {
             }}
           />
 
-          {/* Towering Crimson Beacon Beam Overlay */}
+          {/* Towering Crimson Beacon & Bridge Span Glow Overlay */}
           <div
             className="pointer-events-none absolute right-[18%] sm:right-[22%] inset-y-0 w-16 sm:w-24 opacity-85"
             style={{
@@ -161,135 +212,303 @@ export default function WorldEventsPage() {
           />
           <div className="pointer-events-none absolute right-[21%] sm:right-[24.6%] inset-y-0 w-1.5 bg-gradient-to-t from-amber-200 via-crimson-accent to-transparent opacity-90" />
 
-          {/* Dark Left Gradient Overlay for Crisp Readability */}
           <div
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "linear-gradient(90deg, #0E1211 0%, rgba(14,18,17,0.95) 44%, rgba(14,18,17,0.58) 74%, rgba(14,18,17,0.28) 100%)",
+                "linear-gradient(90deg, #0E1211 0%, rgba(14,18,17,0.96) 48%, rgba(14,18,17,0.65) 76%, rgba(14,18,17,0.30) 100%)",
             }}
           />
 
-          <div className="relative z-10 p-6 sm:p-10 lg:p-12 max-w-2xl space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-2 rounded-full border border-crimson/40 bg-crimson-muted/60 px-3 py-1 text-xs font-semibold text-crimson-accent">
-                <span className="h-2 w-2 rounded-full bg-crimson-accent animate-pulse" />
-                {worldEvent.completed
-                  ? "Event Completed"
-                  : isContractDeployed && worldEvent.active
-                  ? "Active Event"
-                  : "Regional Objective (Awaiting Deploy)"}
-              </span>
-
-              <Link
-                href="/world"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-obsidian/75 px-3 py-1 text-xs font-medium text-ink-secondary hover:text-white transition-colors"
-              >
-                <MapPin className="h-3.5 w-3.5 text-crimson-accent" />
-                <span>
-                  Northern Mountain • Tile {formatCoords(worldEvent.targetTileId)}
+          <div className="relative z-10 p-6 sm:p-10 lg:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7 space-y-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="inline-flex items-center gap-2 rounded-full border border-crimson/40 bg-crimson-muted/60 px-3.5 py-1 text-xs font-semibold text-crimson-accent">
+                  <span className="h-2 w-2 rounded-full bg-crimson-accent animate-pulse" />
+                  {worldEvent.completed
+                    ? "Event #1 Completed"
+                    : "Event #1 • Active Regional Project"}
                 </span>
-              </Link>
-            </div>
 
-            <div className="space-y-2.5">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-ink-primary">
-                {worldEvent.title}
-              </h1>
-              <p className="text-sm sm:text-base leading-relaxed text-ink-secondary max-w-xl">
-                The community is raising the Northern Beacon at Heartlands{" "}
-                <span className="font-mono text-ink-primary">(3, 0)</span>.
-                Reaching <span className="font-semibold text-ink-primary">100%</span>{" "}
-                automatically unlocks{" "}
-                <span className="font-semibold text-crimson-accent">
-                  Region 1: The Wild Frontier (49 new tiles)
-                </span>{" "}
-                onchain for every builder.
-              </p>
-            </div>
+                <Link
+                  href="/world"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-obsidian/80 px-3 py-1 text-xs font-medium text-ink-secondary hover:text-white transition-colors"
+                >
+                  <MapPin className="h-3.5 w-3.5 text-crimson-accent" />
+                  <span>
+                    Northern River Strait • Tile{" "}
+                    {formatCoords(worldEvent.targetTileId)}
+                  </span>
+                </Link>
 
-            {/* Verified Progress Bar */}
-            <div className="space-y-2.5 max-w-lg pt-1">
-              <div className="h-3 w-full overflow-hidden rounded-full bg-white/[0.09] p-0.5">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-crimson via-crimson-accent to-amber-300 transition-all duration-500"
-                  style={{
-                    width: `${Math.max(
-                      progressRatio > 0 ? 3 : 0,
-                      Math.round(progressRatio * 100)
-                    )}%`,
-                  }}
-                />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/30 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-200">
+                  Target Region: The Wild Frontier
+                </span>
               </div>
 
-              <div className="flex items-center justify-between text-xs sm:text-sm">
-                <div className="inline-flex items-center gap-2 font-mono font-bold text-ink-primary">
-                  <WifTokenEmblem className="w-4 h-4" />
-                  <span>
-                    {formatWif(worldEvent.totalContributed, 0)} /{" "}
+              <div className="space-y-3">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
+                  {displayTitle}
+                </h1>
+                <p className="text-sm sm:text-base leading-relaxed text-ink-secondary max-w-2xl">
+                  For generations, the rushing waters of the Northern Strait have
+                  separated <span className="text-white font-semibold">The Heartlands</span>{" "}
+                  from the untamed riches of{" "}
+                  <span className="text-amber-300 font-semibold">
+                    Region 2: The Wild Frontier
+                  </span>
+                  . Pioneers across the realm are pooling{" "}
+                  <span className="text-crimson-accent font-semibold">$WIF</span>{" "}
+                  and engineering materials at Tile{" "}
+                  <span className="font-mono text-white">(3, 0)</span> to raise{" "}
+                  <span className="text-white font-semibold">
+                    The Great Bridge
+                  </span>{" "}
+                  and permanently open 49 new frontier tiles for settlement.
+                </p>
+              </div>
+
+              {/* Required Resources & $WIF Goal Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-2xl">
+                <div className="rounded-2xl border border-crimson/35 bg-obsidian/85 p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-ink-muted">
+                    $WIF Goal
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5 font-mono text-sm font-extrabold text-crimson-accent">
+                    <WifTokenEmblem className="h-4 w-4" />
                     {formatWif(worldEvent.targetAmount, 0)} $WIF
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-[#D99B52]/30 bg-obsidian/85 p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-ink-muted">
+                    Bridge Timber
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5 font-mono text-sm font-extrabold text-[#D99B52]">
+                    <Trees className="h-4 w-4" />
+                    1,200 Wood
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-slate-300/30 bg-obsidian/85 p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-ink-muted">
+                    Arch Masonry
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5 font-mono text-sm font-extrabold text-slate-200">
+                    <Mountain className="h-4 w-4" />
+                    900 Stone
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-amber-400/30 bg-obsidian/85 p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-ink-muted">
+                    Builder Rations
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5 font-mono text-sm font-extrabold text-amber-300">
+                    <Wheat className="h-4 w-4" />
+                    600 Food
+                  </div>
+                </div>
+              </div>
+
+              {/* Verified Progress Bar */}
+              <div className="space-y-2.5 max-w-xl pt-1">
+                <div className="h-3.5 w-full overflow-hidden rounded-full bg-white/[0.09] p-0.5">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-crimson via-crimson-accent to-amber-300 transition-all duration-500"
+                    style={{
+                      width: `${Math.max(
+                        progressRatio > 0 ? 3 : 0,
+                        Math.round(progressRatio * 100)
+                      )}%`,
+                    }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-xs sm:text-sm">
+                  <div className="inline-flex items-center gap-2 font-mono font-bold text-white">
+                    <WifTokenEmblem className="w-4 h-4" />
+                    <span>
+                      {formatWif(worldEvent.totalContributed, 0)} /{" "}
+                      {formatWif(worldEvent.targetAmount, 0)} $WIF Contributed
+                    </span>
+                  </div>
+                  <span className="text-amber-300 font-mono font-semibold">
+                    {worldEvent.completed
+                      ? "100% Complete — Wild Frontier Unlocked!"
+                      : worldEvent.deadline > 0
+                      ? formatCountdown(worldEvent.deadline)
+                      : `${Math.round(progressRatio * 100)}% Funded Onchain`}
                   </span>
                 </div>
-                <span className="text-ink-muted font-medium">
-                  {worldEvent.completed
-                    ? "100% Complete"
-                    : worldEvent.deadline > 0
-                    ? formatCountdown(worldEvent.deadline)
-                    : isContractDeployed
-                    ? `${Math.round(progressRatio * 100)}% Funded`
-                    : "0% (Genesis State)"}
-                </span>
+              </div>
+
+              {/* Primary Contribute Action */}
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetTxState();
+                    setContributeModalOpen(true);
+                  }}
+                  disabled={worldEvent.completed}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-crimson-accent to-crimson px-7 py-3.5 text-sm font-bold text-white shadow-crimson hover:brightness-110 disabled:opacity-50 transition-all"
+                >
+                  <Flame className="h-4 w-4" />
+                  <span>
+                    {worldEvent.completed
+                      ? "The Great Bridge Completed"
+                      : "Contribute $WIF to The Great Bridge"}
+                  </span>
+                </button>
+
+                {treasuryAddress && (
+                  <a
+                    href={explorerAddressUrl(treasuryAddress)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.12] bg-obsidian/80 px-4 py-3.5 text-xs font-medium text-ink-secondary hover:text-white transition-colors"
+                  >
+                    <span>Treasury: {shortenAddress(treasuryAddress)}</span>
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                )}
               </div>
             </div>
 
-            {/* Primary Contribute Action */}
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  resetTxState();
-                  setContributeModalOpen(true);
-                }}
-                disabled={worldEvent.completed}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-crimson-accent to-crimson px-7 py-3.5 text-sm font-bold text-white shadow-crimson hover:brightness-110 disabled:opacity-50 transition-all"
-              >
-                <Flame className="h-4 w-4" />
-                <span>
-                  {worldEvent.completed ? "Objective Completed" : "Contribute"}
-                </span>
-              </button>
+            {/* Right (5 cols): Bespoke Architectural Bridge Blueprint Card */}
+            <div className="lg:col-span-5">
+              <div className="rounded-2xl border border-amber-200/25 bg-[#0D1214]/90 p-5 shadow-panel backdrop-blur-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300">
+                    Architectural Blueprint • Event #1
+                  </span>
+                  <span className="rounded-full border border-emerald-500/35 bg-emerald-500/15 px-2.5 py-0.5 font-mono text-[10px] font-bold text-emerald-300">
+                    Region 1 → Region 2
+                  </span>
+                </div>
 
-              {treasuryAddress && (
-                <a
-                  href={explorerAddressUrl(treasuryAddress)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.1] bg-obsidian/70 px-4 py-3.5 text-xs font-medium text-ink-secondary hover:text-white transition-colors"
-                >
-                  <span>Treasury: {shortenAddress(treasuryAddress)}</span>
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              )}
+                {/* Custom SVG Illustration of The Great Bridge */}
+                <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-gradient-to-b from-[#131C24] to-[#081015] p-4">
+                  <svg
+                    viewBox="0 0 420 175"
+                    className="w-full h-auto block"
+                    aria-label="The Great Bridge spanning the Northern Strait"
+                  >
+                    <defs>
+                      <linearGradient id="skyGlow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#2A1215" />
+                        <stop offset="100%" stopColor="#091319" />
+                      </linearGradient>
+                      <linearGradient id="bridgeStone" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#94A3B8" />
+                        <stop offset="50%" stopColor="#E2E8F0" />
+                        <stop offset="100%" stopColor="#94A3B8" />
+                      </linearGradient>
+                    </defs>
+                    <rect width="420" height="175" fill="url(#skyGlow)" rx="10" />
+                    {/* Distant Frontier Mountains */}
+                    <polygon
+                      points="0,125 55,68 115,125"
+                      fill="#1E293B"
+                      opacity="0.7"
+                    />
+                    <polygon
+                      points="290,125 355,58 420,125"
+                      fill="#1E293B"
+                      opacity="0.7"
+                    />
+                    {/* Crimson Beacon Spire Glow */}
+                    <circle
+                      cx="210"
+                      cy="48"
+                      r="26"
+                      fill="#FF4D5A"
+                      opacity="0.22"
+                    />
+                    <line
+                      x1="210"
+                      y1="8"
+                      x2="210"
+                      y2="92"
+                      stroke="#FF4D5A"
+                      strokeWidth="3"
+                      strokeDasharray="4 2"
+                    />
+                    {/* River Strait Water */}
+                    <rect
+                      x="0"
+                      y="125"
+                      width="420"
+                      height="50"
+                      fill="#0E3A47"
+                    />
+                    {/* Grand Multi-Arch Stone & Timber Bridge */}
+                    <path
+                      d="M 20 125 L 20 88 L 400 88 L 400 125 L 365 125 A 38 32 0 0 0 289 125 L 250 125 A 40 34 0 0 0 170 125 L 131 125 A 38 32 0 0 0 55 125 Z"
+                      fill="url(#bridgeStone)"
+                    />
+                    {/* Bridge Towers */}
+                    <rect
+                      x="132"
+                      y="54"
+                      width="24"
+                      height="71"
+                      fill="#CBD5E1"
+                    />
+                    <polygon points="128,54 144,34 160,54" fill="#E63946" />
+                    <rect
+                      x="264"
+                      y="54"
+                      width="24"
+                      height="71"
+                      fill="#CBD5E1"
+                    />
+                    <polygon points="260,54 276,34 292,54" fill="#E63946" />
+                    {/* Timber Parapet Rail */}
+                    <line
+                      x1="20"
+                      y1="86"
+                      x2="400"
+                      y2="86"
+                      stroke="#D99B52"
+                      strokeWidth="4"
+                    />
+                  </svg>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <div className="font-bold text-white">
+                    Unlock Effect on Completion:
+                  </div>
+                  <p className="text-ink-secondary leading-relaxed">
+                    Automatically unlocks{" "}
+                    <span className="text-emerald-300 font-semibold">
+                      Region 2: The Wild Frontier
+                    </span>{" "}
+                    for all players, fulfills the Lv. 5 Sovereign Capital
+                    regional requirement, and records every contributor on the
+                    immutable bridge charter.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* BOTTOM TWO-COLUMN SECTION: Recent Contributors + Planned World Phases */}
+        {/* BOTTOM TWO-COLUMN SECTION: Verified Contributors + 4 Future Event Templates */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left (7 cols): Verified Onchain Contributors */}
-          <div className="lg:col-span-7 rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-6 space-y-4">
+          <div className="lg:col-span-7 rounded-2xl border border-amber-200/15 bg-[#111514]/90 backdrop-blur-md shadow-panel p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-ink-primary">
-                  Recent Contributors
+                  Verified Bridge Contributors
                 </h2>
                 <p className="text-xs text-ink-muted mt-0.5">
-                  Verified directly from EventContribution contract logs on
+                  Indexed directly from EventContribution contract logs on
                   Robinhood Chain
                 </p>
               </div>
               <span className="rounded-lg border border-white/[0.07] bg-obsidian px-2.5 py-1 font-mono text-xs text-ink-secondary">
-                {eventContributions.length} verified
+                {eventContributions.length} verified records
               </span>
             </div>
 
@@ -305,14 +524,17 @@ export default function WorldEventsPage() {
                   No verified contributions recorded yet
                 </div>
                 <p className="text-xs text-ink-muted max-w-md mx-auto leading-relaxed">
-                  {isContractDeployed
-                    ? "Be the first builder to contribute $WIF toward the Northern Beacon. Every confirmed contribution appears here with a Blockscout transaction link."
-                    : "Once WIFWorlds.sol is deployed to Robinhood Chain, real player $WIF contributions and Blockscout transaction links appear here."}
+                  Be the first pioneer to contribute $WIF toward{" "}
+                  <span className="text-white font-semibold">
+                    {displayTitle}
+                  </span>
+                  . Every confirmed transaction is permanently listed here with
+                  a Blockscout verification link.
                 </p>
               </div>
             ) : (
               <ul className="divide-y divide-white/[0.06]">
-                {eventContributions.slice(0, 12).map((item) => (
+                {eventContributions.slice(0, 15).map((item) => (
                   <li
                     key={item.id}
                     className="flex items-center justify-between gap-3 py-3.5"
@@ -354,53 +576,28 @@ export default function WorldEventsPage() {
             )}
           </div>
 
-          {/* Right (5 cols): Future Regional Objectives Roadmap */}
-          <div className="lg:col-span-5 rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-6 space-y-4">
+          {/* Right (5 cols): Future World Event Templates */}
+          <div className="lg:col-span-5 rounded-2xl border border-amber-200/15 bg-[#111514]/90 backdrop-blur-md shadow-panel p-6 space-y-4">
             <div>
               <h2 className="text-lg font-bold text-ink-primary">
-                Upcoming Events
+                Future World Event Templates
               </h2>
               <p className="text-xs text-ink-muted mt-0.5">
-                Planned regional world phases following the Northern Beacon
+                Ready-to-launch community objectives following The Great Bridge
               </p>
             </div>
 
             <div className="space-y-3">
-              {[
-                {
-                  icon: Compass,
-                  title: "Eastern Frontier Expansion",
-                  region: "Eastern Ironreach",
-                  phase: "Phase II Roadmap",
-                  description:
-                    "Open high-ridge supply bridges connecting eastern mountain outposts to the central crucible.",
-                },
-                {
-                  icon: Shield,
-                  title: "Storm Preparation",
-                  region: "Western Mistcoast",
-                  phase: "Phase III Roadmap",
-                  description:
-                    "Coordinate coastal bastion reinforcements with established Settlement wardens across the archipelago.",
-                },
-                {
-                  icon: Sparkles,
-                  title: "Ember Crucible Awakening",
-                  region: "Central Landmark (3, 3)",
-                  phase: "Seasonal Milestone",
-                  description:
-                    "Unite regional Signal Beacons across the 7 × 7 realm to illuminate the central sanctuary.",
-                },
-              ].map((ev) => {
+              {FUTURE_EVENT_TEMPLATES.map((ev) => {
                 const Icon = ev.icon;
                 return (
                   <div
-                    key={ev.title}
-                    className="rounded-xl border border-white/[0.07] bg-obsidian/70 p-4 space-y-2"
+                    key={ev.id}
+                    className="rounded-xl border border-white/[0.08] bg-obsidian/75 p-4 space-y-2"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2.5">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#181D1B] text-crimson-accent">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#181D1B] text-amber-300">
                           <Icon className="h-4 w-4" />
                         </span>
                         <div>
@@ -412,13 +609,19 @@ export default function WorldEventsPage() {
                           </p>
                         </div>
                       </div>
-                      <span className="rounded-full border border-white/[0.08] bg-[#161A19] px-2.5 py-0.5 text-[10px] font-semibold text-ink-muted">
+                      <span className="rounded-full border border-white/[0.08] bg-[#161A19] px-2.5 py-0.5 text-[10px] font-semibold text-amber-200/90">
                         {ev.phase}
                       </span>
                     </div>
                     <p className="text-xs leading-relaxed text-ink-secondary">
                       {ev.description}
                     </p>
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/[0.06] font-mono text-[10px] text-ink-muted">
+                      <span className="text-crimson-accent font-semibold">
+                        Goal: {ev.requiredWif}
+                      </span>
+                      <span>{ev.materials}</span>
+                    </div>
                   </div>
                 );
               })}
@@ -434,10 +637,10 @@ export default function WorldEventsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-crimson-accent">
-                  Community Construction
+                  Community Construction • Event #1
                 </span>
                 <h2 className="text-xl font-bold text-ink-primary mt-0.5">
-                  Contribute to {worldEvent.title}
+                  Contribute to {displayTitle}
                 </h2>
               </div>
               <button
@@ -502,9 +705,15 @@ export default function WorldEventsPage() {
 
             <div className="rounded-xl border border-white/[0.07] bg-obsidian/70 p-3.5 space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-ink-muted">Target Tile</span>
+                <span className="text-ink-muted">Target Location</span>
                 <span className="font-mono text-ink-primary">
-                  Northern Spire {formatCoords(worldEvent.targetTileId)}
+                  Northern Strait {formatCoords(worldEvent.targetTileId)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-ink-muted">Target Region Unlocked</span>
+                <span className="text-amber-300 font-semibold">
+                  Region 2: The Wild Frontier
                 </span>
               </div>
               <div className="flex justify-between">
@@ -512,10 +721,6 @@ export default function WorldEventsPage() {
                 <span className="text-ink-primary">
                   Robinhood Chain ({ROBINHOOD_CHAIN_ID})
                 </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-ink-muted">Gas Fee</span>
-                <span className="text-ink-secondary">Paid separately in ETH</span>
               </div>
             </div>
 
@@ -579,8 +784,8 @@ export default function WorldEventsPage() {
             <div className="flex items-start gap-2 text-[11px] text-ink-dim">
               <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-ink-muted" />
               <span>
-                Contributions are recorded onchain and advance the Beacon progress
-                only after transaction confirmation.
+                Contributions route 100% to the WIF WORLDS Treasury onchain and
+                update The Great Bridge progress upon confirmation.
               </span>
             </div>
           </div>
@@ -591,4 +796,3 @@ export default function WorldEventsPage() {
     </main>
   );
 }
-
