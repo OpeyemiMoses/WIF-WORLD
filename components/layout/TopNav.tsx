@@ -18,7 +18,11 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { WifTokenEmblem, WifWorldsLogo } from "@/components/brand/WifWorldsLogo";
+import {
+  WifTokenEmblem,
+  WifWorldsGameIcon,
+  WifWorldsLogo,
+} from "@/components/brand/WifWorldsLogo";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { useRobinhoodWallet } from "@/lib/contract/useWorldState";
 import {
@@ -196,9 +200,9 @@ export function TopNav() {
                   setConnectError(null);
                   setConnectModalOpen(true);
                 }}
-                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-b from-crimson-accent to-crimson px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-crimson-sm hover:brightness-110 active:scale-[0.99] transition-all"
+                className="gamified-btn inline-flex items-center gap-2 rounded-lg bg-gradient-to-b from-crimson-accent to-crimson px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-crimson-sm hover:brightness-110 transition-all"
               >
-                <Wallet className="h-4 w-4" />
+                <WifWorldsGameIcon className="h-4 w-4" animated={false} />
                 <span>Connect Wallet</span>
               </button>
             ) : (
@@ -206,15 +210,20 @@ export function TopNav() {
                 <button
                   type="button"
                   onClick={() => setMenuOpen((v) => !v)}
-                  className="inline-flex items-center gap-2.5 rounded-lg border border-white/[0.1] bg-[#161918] hover:bg-[#1E2220] px-3 py-1.5 text-xs sm:text-sm font-medium text-ink-primary transition-colors"
+                  className="gamified-btn inline-flex items-center gap-2.5 rounded-lg border border-white/[0.12] bg-[#161918] hover:border-crimson/40 hover:bg-[#1E2220] px-3 py-1.5 text-xs sm:text-sm font-medium text-ink-primary transition-all"
                 >
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-crimson-accent to-crimson-deep text-[10px] font-bold text-white">
-                    {address ? address.slice(2, 4).toUpperCase() : "WW"}
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full border border-crimson/45 bg-[#1B0E11] p-1 shadow-[0_0_10px_rgba(230,57,70,0.35)]">
+                    <WifWorldsGameIcon className="w-full h-full" animated={false} />
                   </span>
                   <span className="font-mono text-xs sm:text-[13px]">
                     {shortenAddress(address)}
                   </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-ink-muted" />
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 text-ink-muted transition-transform duration-200",
+                      menuOpen && "rotate-180 text-crimson-accent"
+                    )}
+                  />
                 </button>
 
                 {menuOpen && address && (

@@ -24,6 +24,7 @@ interface IsometricWorldMapProps {
   tiles: TileState[];
   selectedTileId: number;
   onSelectTile: (tileId: number) => void;
+  onCameraFly?: (tileId: number | null, zoomedIn: boolean) => void;
   connectedAddress?: string;
   beaconProgressRatio?: number; // 0..1
   isRegionLocked?: boolean;
@@ -49,6 +50,7 @@ export function IsometricWorldMap({
   tiles,
   selectedTileId,
   onSelectTile,
+  onCameraFly,
   connectedAddress,
   beaconProgressRatio = 0,
   isRegionLocked = false,
@@ -462,11 +464,13 @@ export function IsometricWorldMap({
       phys.goalTargetY = 0.85;
       phys.goalTargetZ = DEFAULT_CAMERA.targetZ;
       phys.targetDistance = DEFAULT_CAMERA.distance;
+      onCameraFly?.(hit.tileId, false);
     } else {
       phys.goalTargetX = Math.max(-11.5, Math.min(11.5, hit.wx));
       phys.goalTargetY = Math.max(0.4, Math.min(4.2, hit.wy));
       phys.goalTargetZ = Math.max(-11.5, Math.min(11.5, hit.wz));
       phys.targetDistance = 11.2;
+      onCameraFly?.(hit.tileId, true);
     }
   };
 

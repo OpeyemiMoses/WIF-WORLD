@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { PageCastleBackdrop } from "@/components/layout/PageCastleBackdrop";
 import { WifTokenEmblem } from "@/components/brand/WifWorldsLogo";
+import { AnimatedNumber, ScrollReveal } from "@/components/ui/ScrollReveal";
 import { useRobinhoodWallet, useWorldData } from "@/lib/contract/useWorldState";
 import { explorerAddressUrl, explorerTxUrl } from "@/lib/chain/robinhood";
 import {
@@ -86,60 +87,62 @@ export default function WorldActivityPage() {
   }, [activities, filter]);
 
   return (
-    <div className="relative flex-1 overflow-y-auto bg-[#070B0E]">
+    <div className="animate-page-enter relative flex-1 overflow-y-auto bg-[#070B0E]">
       <PageCastleBackdrop />
 
       <div className="relative z-10 mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
         {/* Hero Header */}
-        <section className="rounded-3xl border border-amber-200/20 bg-gradient-to-b from-[#13181D]/90 to-[#0B0F12]/95 p-6 sm:p-9 shadow-[0_24px_80px_rgba(0,0,0,0.75)] backdrop-blur-xl">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="space-y-3 max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-crimson/40 bg-crimson/15 px-3.5 py-1 text-xs font-semibold text-crimson-accent">
-                <Activity className="h-3.5 w-3.5" />
-                <span>Verified Onchain World Ledger • Robinhood Chain (4663)</span>
+        <ScrollReveal variant="pop">
+          <section className="rounded-3xl border border-amber-200/20 bg-gradient-to-b from-[#13181D]/90 to-[#0B0F12]/95 p-6 sm:p-9 shadow-[0_24px_80px_rgba(0,0,0,0.75)] backdrop-blur-xl">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="space-y-3 max-w-2xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-crimson/40 bg-crimson/15 px-3.5 py-1 text-xs font-semibold text-crimson-accent">
+                  <Activity className="h-3.5 w-3.5" />
+                  <span>Verified Onchain World Ledger • Robinhood Chain (4663)</span>
+                </div>
+                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+                  Live World Activity Feed
+                </h1>
+                <p className="text-sm sm:text-base text-ink-secondary leading-relaxed">
+                  Every land claim, Settlement Hall, production structure, upgrade,
+                  and World Event contribution in WIF WORLDS is indexed directly
+                  from verified smart contract events.
+                </p>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-                Live World Activity Feed
-              </h1>
-              <p className="text-sm sm:text-base text-ink-secondary leading-relaxed">
-                Every land claim, Settlement Hall, production structure, upgrade,
-                and World Event contribution in WIF WORLDS is indexed directly
-                from verified smart contract events.
-              </p>
-            </div>
 
-            {/* Live World Summary Counters */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 shrink-0">
-              <div className="rounded-2xl border border-white/[0.09] bg-obsidian/80 px-4 py-3">
-                <div className="text-[11px] text-ink-muted">Claimed Tiles</div>
-                <div className="mt-1 font-mono text-xl font-extrabold text-white">
-                  {worldSummary.claimedTiles}
-                  <span className="text-xs font-normal text-ink-muted">
-                    /42
-                  </span>
+              {/* Live World Summary Counters */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 shrink-0">
+                <div className="gamified-card rounded-2xl border border-white/[0.09] bg-obsidian/80 px-4 py-3">
+                  <div className="text-[11px] text-ink-muted">Claimed Tiles</div>
+                  <div className="mt-1 font-mono text-xl font-extrabold text-white">
+                    <AnimatedNumber value={worldSummary.claimedTiles} />
+                    <span className="text-xs font-normal text-ink-muted">
+                      /42
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="rounded-2xl border border-white/[0.09] bg-obsidian/80 px-4 py-3">
-                <div className="text-[11px] text-ink-muted">Settlements</div>
-                <div className="mt-1 font-mono text-xl font-extrabold text-[#2DD4BF]">
-                  {worldSummary.settlements}
+                <div className="gamified-card rounded-2xl border border-white/[0.09] bg-obsidian/80 px-4 py-3">
+                  <div className="text-[11px] text-ink-muted">Settlements</div>
+                  <div className="mt-1 font-mono text-xl font-extrabold text-[#2DD4BF]">
+                    <AnimatedNumber value={worldSummary.settlements} />
+                  </div>
                 </div>
-              </div>
-              <div className="rounded-2xl border border-white/[0.09] bg-obsidian/80 px-4 py-3">
-                <div className="text-[11px] text-ink-muted">Structures</div>
-                <div className="mt-1 font-mono text-xl font-extrabold text-amber-300">
-                  {worldSummary.structures}
+                <div className="gamified-card rounded-2xl border border-white/[0.09] bg-obsidian/80 px-4 py-3">
+                  <div className="text-[11px] text-ink-muted">Structures</div>
+                  <div className="mt-1 font-mono text-xl font-extrabold text-amber-300">
+                    <AnimatedNumber value={worldSummary.structures} />
+                  </div>
                 </div>
-              </div>
-              <div className="rounded-2xl border border-white/[0.09] bg-obsidian/80 px-4 py-3">
-                <div className="text-[11px] text-ink-muted">Active Builders</div>
-                <div className="mt-1 font-mono text-xl font-extrabold text-crimson-accent">
-                  {worldSummary.uniqueBuilders}
+                <div className="gamified-card rounded-2xl border border-white/[0.09] bg-obsidian/80 px-4 py-3">
+                  <div className="text-[11px] text-ink-muted">Active Builders</div>
+                  <div className="mt-1 font-mono text-xl font-extrabold text-crimson-accent">
+                    <AnimatedNumber value={worldSummary.uniqueBuilders} />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </ScrollReveal>
 
         {/* Filter Bar + Refresh Button */}
         <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/[0.1] bg-[#101413]/92 p-3 backdrop-blur-md shadow-panel">

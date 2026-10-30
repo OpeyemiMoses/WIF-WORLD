@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -31,6 +31,11 @@ import { IsometricTilePreview } from "@/components/tiles/IsometricTilePreview";
 import { BuildActionModal } from "@/components/build/BuildActionModal";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { WifTokenEmblem } from "@/components/brand/WifWorldsLogo";
+import {
+  GameEventCelebration,
+  GamifiedCelebrationEvent,
+} from "@/components/ui/GameEventCelebration";
+import { AnimatedNumber } from "@/components/ui/ScrollReveal";
 import {
   useRobinhoodWallet,
   useWorldActionExecutor,
@@ -73,6 +78,20 @@ export default function WorldScreen() {
   const [visitedBuilderAddress, setVisitedBuilderAddress] = useState<
     `0x${string}` | null
   >(null);
+  const [celebrationEvent, setCelebrationEvent] =
+    useState<GamifiedCelebrationEvent | null>(null);
+  const seenActivityIdRef = useRef<string | null>(null);
+
+  const triggerCelebration = useCallback(
+    (evt: Omit<GamifiedCelebrationEvent, "id">, durationMs = 3100) => {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      setCelebrationEvent({ ...evt, id });
+      window.setTimeout(() => {
+        setCelebrationEvent((cur) => (cur?.id === id ? null : cur));
+      }, durationMs);
+    },
+    []
+  );
 
   const { address, effectivePlayerAddress } = useRobinhoodWallet();
 
@@ -136,9 +155,104 @@ export default function WorldScreen() {
   const activeRegion = REGIONS[activeRegionId] ?? REGIONS[0];
   const isCurrentRegionUnlocked = Boolean(regionUnlockedMap[activeRegionId]);
 
+  // Trigger gamified celebration banner whenever a new world action is confirmed
+  useEffect(() => {
+    const newest = activities[0];
+    if (!newest) return;
+    if (seenActivityIdRef.current === null) {
+      seenActivityIdRef.current = newest.id;
+      return;
+    }
+    if (seenActivityIdRef.current === newest.id) return;
+    seenActivityIdRef.current = newest.id;
+
+    const coords = formatCoords(newest.tileId ?? selectedTileId);
+    if (newest.kind === "upgrade") {
+      const tier =
+        SETTLEMENT_TIER_META[
+          Math.min(5, Math.max(1, newest.newLevel ?? 2)) as SettlementLevel
+        ];
+      triggerCelebration(
+        {
+          kind: "upgrade",
+          title: `Upgraded to ${tier.name}!`,
+          subtitle: `Settlement at Tile ${coords} ascended to Lv.${newest.newLevel ?? 2}`,
+          rewardChips: [`+2 Territory Cap`, `Lv.${newest.newLevel ?? 2} Tier`],
+        },
+        3800
+      );
+    } else if (newest.kind === "settlement") {
+      triggerCelebration({
+        kind: "settlement",
+        title: `Settlement Hall Founded!`,
+        subtitle: `Permanent stronghold established at Tile ${coords}`,
+        rewardChips: ["+3 Territory Cap", "+20W / +10S / +20F per hr"],
+      });
+    } else if (newest.kind === "structure") {
+      const stMeta = newest.structureType
+        ? STRUCTURE_META[newest.structureType]
+        : null;
+      triggerCelebration({
+        kind: "structure",
+        title: `${stMeta?.name ?? "Structure"} Constructed!`,
+        subtitle: `Built at Tile ${coords} • ${stMeta?.gameplayFunction ?? "Active"}`,
+        rewardChips: [stMeta?.shortPurpose ?? "Production Online"],
+      });
+    } else if (newest.kind === "claim") {
+      triggerCelebration({
+        kind: "claim",
+        title: `Territory Claimed at ${coords}!`,
+        subtitle: `Sovereign border expanded in ${activeRegion.name}`,
+        rewardChips: ["+1 Sovereign Tile", "+10 Activity Score"],
+      });
+    } else if (newest.kind === "harvest") {
+      const w = newest.resourcesAdded?.wood ?? 0;
+      const s = newest.resourcesAdded?.stone ?? 0;
+      const f = newest.resourcesAdded?.food ?? 0;
+      triggerCelebration({
+        kind: "harvest",
+        title: "Resources Harvested!",
+        subtitle: "Collected into your Settlement Warehouse",
+        rewardChips: [`+${w} Wood`, `+${s} Stone`, `+${f} Food`],
+      });
+    }
+  }, [activities, activeRegion.name, selectedTileId, triggerCelebration]);
+
+  const handleCameraFly = useCallback(
+    (tileId: number | null, zoomedIn: boolean) => {
+      if (tileId === null) return;
+      const t = tiles.find((item) => item.id === tileId);
+      const tMeta = t ? TERRAIN_META[t.terrain] : null;
+      triggerCelebration(
+        {
+          kind: "camera_fly",
+          title: zoomedIn
+            ? `Flying to Tile ${formatCoords(tileId)}`
+            : "Overview Camera Restored",
+          subtitle: zoomedIn
+            ? `Inspecting ${tMeta?.name ?? "Terrain"} in ${activeRegion.name}`
+            : `Viewing full ${activeRegion.name} archipelago`,
+        },
+        1900
+      );
+    },
+    [activeRegion.name, tiles, triggerCelebration]
+  );
+
   const handleSelectRegion = (regionId: number) => {
     setActiveRegionId(regionId);
     setSelectedTileId(getWorldTileId(regionId, regionId === 0 ? 31 : 24));
+    const reg = REGIONS[regionId];
+    if (reg) {
+      triggerCelebration(
+        {
+          kind: "camera_fly",
+          title: `Entered ${reg.name}`,
+          subtitle: reg.subtitle,
+        },
+        2000
+      );
+    }
   };
 
   const selectedTile = useMemo(
@@ -298,7 +412,10 @@ export default function WorldScreen() {
   const completedMissionsCount = missions.filter((m) => m.completed).length;
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row w-full h-full min-h-0 overflow-hidden bg-[#050C0F]">
+    <div className="animate-page-enter flex-1 flex flex-col lg:flex-row w-full h-full min-h-0 overflow-hidden bg-[#050C0F]">
+      {/* Gamified Action, Upgrade & Camera Movement Celebration Overlay */}
+      <GameEventCelebration event={celebrationEvent} />
+
       {/* LEFT / CENTER: Interactive 7x7 Isometric World Viewport */}
       <div className="relative flex-1 min-h-[380px] lg:min-h-0 h-full w-full overflow-hidden bg-[#050C0F]">
         {/* Top-Left Floating HUD: World Briefing + Multiplayer Tabs (Feed / Missions / Rankings) */}
@@ -467,7 +584,7 @@ export default function WorldScreen() {
             >
               <Trees className="h-3.5 w-3.5 text-[#D99B52]" />
               <span className="font-mono font-bold text-ink-primary">
-                {Math.floor(playerStats.wood)}
+                <AnimatedNumber value={Math.floor(playerStats.wood)} />
               </span>
               <span className="font-mono text-[10px] text-[#D99B52]">
                 +{playerStats.woodPerHour}/h
@@ -482,7 +599,7 @@ export default function WorldScreen() {
             >
               <Mountain className="h-3.5 w-3.5 text-slate-300" />
               <span className="font-mono font-bold text-ink-primary">
-                {Math.floor(playerStats.stone)}
+                <AnimatedNumber value={Math.floor(playerStats.stone)} />
               </span>
               <span className="font-mono text-[10px] text-slate-300">
                 +{playerStats.stonePerHour}/h
@@ -497,7 +614,7 @@ export default function WorldScreen() {
             >
               <Wheat className="h-3.5 w-3.5 text-amber-400" />
               <span className="font-mono font-bold text-ink-primary">
-                {Math.floor(playerStats.food)}
+                <AnimatedNumber value={Math.floor(playerStats.food)} />
               </span>
               <span className="font-mono text-[10px] text-amber-400">
                 +{playerStats.foodPerHour}/h
@@ -511,7 +628,7 @@ export default function WorldScreen() {
               onClick={handleHarvestResources}
               disabled={isHarvesting || playerStats.tilesClaimed === 0}
               className={cn(
-                "inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all",
+                "gamified-btn inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all",
                 playerStats.tilesClaimed > 0
                   ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 hover:bg-emerald-500/30"
                   : "bg-white/[0.04] text-ink-muted cursor-not-allowed"
@@ -570,7 +687,10 @@ export default function WorldScreen() {
 
         {/* Floating Drawer: Missions / Regional Rankings / World Feed */}
         {activeDrawer && (
-          <div className="absolute left-4 top-[198px] z-30 w-[328px] sm:w-[372px] max-h-[390px] flex flex-col rounded-2xl border border-white/[0.12] bg-[#101413]/96 shadow-panel backdrop-blur-md overflow-hidden">
+          <div
+            key={activeDrawer}
+            className="animate-gamified-pop absolute left-4 top-[198px] z-30 w-[328px] sm:w-[372px] max-h-[390px] flex flex-col rounded-2xl border border-white/[0.12] bg-[#101413]/96 shadow-panel backdrop-blur-md overflow-hidden"
+          >
             <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
               <div>
                 <div className="text-xs font-bold text-ink-primary">
@@ -787,6 +907,7 @@ export default function WorldScreen() {
           tiles={tiles}
           selectedTileId={selectedTileId}
           onSelectTile={setSelectedTileId}
+          onCameraFly={handleCameraFly}
           connectedAddress={visitedBuilderAddress ?? effectiveProfileAddress}
           beaconProgressRatio={eventProgressRatio}
           isRegionLocked={!isCurrentRegionUnlocked}
@@ -857,7 +978,7 @@ export default function WorldScreen() {
                   <span className="font-mono">+{playerStats.woodPerHour}/h</span>
                 </div>
                 <div className="font-mono text-base font-extrabold text-ink-primary mt-0.5">
-                  {Math.floor(playerStats.wood)}
+                  <AnimatedNumber value={Math.floor(playerStats.wood)} />
                 </div>
                 <div className="text-[9px] text-ink-muted">Lumber Camp</div>
               </div>
@@ -871,7 +992,7 @@ export default function WorldScreen() {
                   <span className="font-mono">+{playerStats.stonePerHour}/h</span>
                 </div>
                 <div className="font-mono text-base font-extrabold text-ink-primary mt-0.5">
-                  {Math.floor(playerStats.stone)}
+                  <AnimatedNumber value={Math.floor(playerStats.stone)} />
                 </div>
                 <div className="text-[9px] text-ink-muted">Quarry</div>
               </div>
@@ -885,7 +1006,7 @@ export default function WorldScreen() {
                   <span className="font-mono">+{playerStats.foodPerHour}/h</span>
                 </div>
                 <div className="font-mono text-base font-extrabold text-ink-primary mt-0.5">
-                  {Math.floor(playerStats.food)}
+                  <AnimatedNumber value={Math.floor(playerStats.food)} />
                 </div>
                 <div className="text-[9px] text-ink-muted">Farm</div>
               </div>
@@ -923,7 +1044,10 @@ export default function WorldScreen() {
           </div>
 
           {/* Selected Tile Header */}
-          <div className="space-y-3 border-b border-white/[0.07] pb-4">
+          <div
+            key={selectedTile.id}
+            className="animate-gamified-pop space-y-3 border-b border-white/[0.07] pb-4"
+          >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-ink-muted">
                 Tile Inspector

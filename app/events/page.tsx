@@ -22,6 +22,7 @@ import { WifTokenEmblem } from "@/components/brand/WifWorldsLogo";
 import { TransactionStatusCallout } from "@/components/build/BuildActionModal";
 import { FeatureFooterStrip } from "@/components/layout/FeatureFooterStrip";
 import { PageCastleBackdrop } from "@/components/layout/PageCastleBackdrop";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import {
   explorerAddressUrl,
   explorerTxUrl,
@@ -188,12 +189,13 @@ export default function WorldEventsPage() {
       : worldEvent.title;
 
   return (
-    <main className="flex-1 flex flex-col bg-[#070B0E] relative overflow-y-auto">
+    <main className="animate-page-enter flex-1 flex flex-col bg-[#070B0E] relative overflow-y-auto">
       <PageCastleBackdrop />
 
       <div className="relative z-10 mx-auto w-full max-w-[1440px] flex-1 px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* HERO ACTIVE EVENT BANNER — EVENT 1: THE GREAT BRIDGE */}
-        <section className="relative overflow-hidden rounded-3xl border border-amber-200/20 bg-[#111514]/92 shadow-[0_24px_80px_rgba(0,0,0,0.78)] backdrop-blur-xl">
+        <ScrollReveal variant="pop">
+          <section className="relative overflow-hidden rounded-3xl border border-amber-200/20 bg-[#111514]/92 shadow-[0_24px_80px_rgba(0,0,0,0.78)] backdrop-blur-xl">
           <div
             className="pointer-events-none absolute inset-0 bg-cover bg-right bg-no-repeat opacity-85"
             style={{
@@ -349,7 +351,7 @@ export default function WorldEventsPage() {
                     setContributeModalOpen(true);
                   }}
                   disabled={worldEvent.completed}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-crimson-accent to-crimson px-7 py-3.5 text-sm font-bold text-white shadow-crimson hover:brightness-110 disabled:opacity-50 transition-all"
+                  className="gamified-btn inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-crimson-accent to-crimson px-7 py-3.5 text-sm font-bold text-white shadow-crimson hover:brightness-110 disabled:opacity-50 transition-all"
                 >
                   <Flame className="h-4 w-4" />
                   <span>
@@ -491,10 +493,12 @@ export default function WorldEventsPage() {
               </div>
             </div>
           </div>
-        </section>
+          </section>
+        </ScrollReveal>
 
         {/* BOTTOM TWO-COLUMN SECTION: Verified Contributors + 4 Future Event Templates */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <ScrollReveal variant="fade-up" delayMs={100}>
+          <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left (7 cols): Verified Onchain Contributors */}
           <div className="lg:col-span-7 rounded-2xl border border-amber-200/15 bg-[#111514]/90 backdrop-blur-md shadow-panel p-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -588,52 +592,52 @@ export default function WorldEventsPage() {
             </div>
 
             <div className="space-y-3">
-              {FUTURE_EVENT_TEMPLATES.map((ev) => {
+              {FUTURE_EVENT_TEMPLATES.map((ev, idx) => {
                 const Icon = ev.icon;
                 return (
-                  <div
-                    key={ev.id}
-                    className="rounded-xl border border-white/[0.08] bg-obsidian/75 p-4 space-y-2"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#181D1B] text-amber-300">
-                          <Icon className="h-4 w-4" />
-                        </span>
-                        <div>
-                          <h3 className="text-sm font-bold text-ink-primary">
-                            {ev.title}
-                          </h3>
-                          <p className="text-[11px] text-ink-muted">
-                            {ev.region}
-                          </p>
+                  <ScrollReveal key={ev.id} variant="pop" delayMs={idx * 70}>
+                    <div className="gamified-card rounded-xl border border-white/[0.08] bg-obsidian/75 p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#181D1B] text-amber-300">
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          <div>
+                            <h3 className="text-sm font-bold text-ink-primary">
+                              {ev.title}
+                            </h3>
+                            <p className="text-[11px] text-ink-muted">
+                              {ev.region}
+                            </p>
+                          </div>
                         </div>
+                        <span className="rounded-full border border-white/[0.08] bg-[#161A19] px-2.5 py-0.5 text-[10px] font-semibold text-amber-200/90">
+                          {ev.phase}
+                        </span>
                       </div>
-                      <span className="rounded-full border border-white/[0.08] bg-[#161A19] px-2.5 py-0.5 text-[10px] font-semibold text-amber-200/90">
-                        {ev.phase}
-                      </span>
+                      <p className="text-xs leading-relaxed text-ink-secondary">
+                        {ev.description}
+                      </p>
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/[0.06] font-mono text-[10px] text-ink-muted">
+                        <span className="text-crimson-accent font-semibold">
+                          Goal: {ev.requiredWif}
+                        </span>
+                        <span>{ev.materials}</span>
+                      </div>
                     </div>
-                    <p className="text-xs leading-relaxed text-ink-secondary">
-                      {ev.description}
-                    </p>
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/[0.06] font-mono text-[10px] text-ink-muted">
-                      <span className="text-crimson-accent font-semibold">
-                        Goal: {ev.requiredWif}
-                      </span>
-                      <span>{ev.materials}</span>
-                    </div>
-                  </div>
+                  </ScrollReveal>
                 );
               })}
             </div>
           </div>
-        </section>
+          </section>
+        </ScrollReveal>
       </div>
 
       {/* Contribution Modal */}
       {contributeModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-white/[0.1] bg-[#111514] p-6 shadow-panel space-y-5">
+          <div className="animate-gamified-pop w-full max-w-lg rounded-2xl border border-white/[0.1] bg-[#111514] p-6 shadow-panel space-y-5">
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-crimson-accent">

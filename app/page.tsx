@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { FeatureFooterStrip } from "@/components/layout/FeatureFooterStrip";
 import { WifTokenEmblem, WifWorldsLogo } from "@/components/brand/WifWorldsLogo";
+import { ScrollReveal, AnimatedNumber } from "@/components/ui/ScrollReveal";
 import { useWorldData } from "@/lib/contract/useWorldState";
 import {
   BEACON_TARGET_TILE_ID,
@@ -110,7 +111,7 @@ export default function LandingPage() {
   }, [worldEvent.targetAmount, worldEvent.totalContributed]);
 
   return (
-    <main className="flex-1 flex flex-col bg-obsidian text-ink-primary">
+    <main className="animate-page-enter flex-1 flex flex-col bg-obsidian text-ink-primary">
       {/* =====================================================================
           1. HERO SECTION — Cinematic Floating Citadels & Crimson Sunset
          ===================================================================== */}
@@ -137,7 +138,7 @@ export default function LandingPage() {
 
         {/* Main Hero Content */}
         <div className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-1 flex-col justify-center px-4 sm:px-6 lg:px-12 py-16 lg:py-24">
-          <div className="max-w-xl space-y-6">
+          <ScrollReveal variant="pop" className="max-w-xl space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-crimson/35 bg-[#1B0F11]/85 px-3.5 py-1.5 text-xs font-semibold text-crimson-accent backdrop-blur-sm">
               <span className="h-2 w-2 rounded-full bg-crimson-accent animate-pulse shadow-[0_0_8px_#FF4D5A]" />
               <span>Persistent Onchain Strategy • Robinhood Chain ({ROBINHOOD_CHAIN_ID})</span>
@@ -163,7 +164,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center gap-3.5 pt-2">
               <Link
                 href="/world"
-                className="group inline-flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-crimson-accent to-crimson px-7 py-4 text-sm sm:text-base font-bold text-white shadow-crimson hover:brightness-110 active:scale-[0.99] transition-all"
+                className="gamified-btn group inline-flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-crimson-accent to-crimson px-7 py-4 text-sm sm:text-base font-bold text-white shadow-crimson hover:brightness-110 transition-all"
               >
                 <span>Enter the World</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -171,7 +172,7 @@ export default function LandingPage() {
 
               <Link
                 href="/rules"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/[0.12] bg-[#141817]/85 px-5 py-4 text-sm font-semibold text-ink-primary hover:border-white/25 hover:bg-[#1B201F] backdrop-blur-sm transition-all"
+                className="gamified-btn inline-flex items-center gap-2 rounded-xl border border-white/[0.12] bg-[#141817]/85 px-5 py-4 text-sm font-semibold text-ink-primary hover:border-white/25 hover:bg-[#1B201F] backdrop-blur-sm transition-all"
               >
                 <BookOpen className="h-4 w-4 text-crimson-accent" />
                 <span>How to Play</span>
@@ -179,18 +180,22 @@ export default function LandingPage() {
 
               <Link
                 href="/events"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/[0.12] bg-[#141817]/85 px-5 py-4 text-sm font-semibold text-ink-primary hover:border-white/25 hover:bg-[#1B201F] backdrop-blur-sm transition-all"
+                className="gamified-btn inline-flex items-center gap-2 rounded-xl border border-white/[0.12] bg-[#141817]/85 px-5 py-4 text-sm font-semibold text-ink-primary hover:border-white/25 hover:bg-[#1B201F] backdrop-blur-sm transition-all"
               >
                 <Flame className="h-4 w-4 text-crimson-accent" />
                 <span>World Objective</span>
               </Link>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
 
         {/* Bottom World Metrics Bar (Exact Panel 1 Design) */}
-        <div className="relative z-10 mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-12 pb-10">
-          <div className="inline-grid grid-cols-2 sm:grid-cols-4 divide-x divide-white/[0.08] rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel">
+        <ScrollReveal
+          variant="fade-up"
+          delayMs={140}
+          className="relative z-10 mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-12 pb-10"
+        >
+          <div className="gamified-card inline-grid grid-cols-2 sm:grid-cols-4 divide-x divide-white/[0.08] rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel">
             <div className="px-5 sm:px-7 py-4">
               <div className="text-xl sm:text-2xl font-extrabold text-ink-primary">
                 49
@@ -200,16 +205,24 @@ export default function LandingPage() {
 
             <div className="px-5 sm:px-7 py-4">
               <div className="text-xl sm:text-2xl font-extrabold text-ink-primary">
-                {isContractDeployed ? worldSummary.settlements : "3 Tiers"}
+                {isContractDeployed ? (
+                  <AnimatedNumber value={worldSummary.settlements} />
+                ) : (
+                  "5 Levels"
+                )}
               </div>
               <div className="text-xs text-ink-muted mt-0.5">
-                {isContractDeployed ? "Active Settlements" : "Architectural Tiers"}
+                {isContractDeployed ? "Active Settlements" : "Settlement Tiers"}
               </div>
             </div>
 
             <div className="px-5 sm:px-7 py-4">
               <div className="text-xl sm:text-2xl font-extrabold text-crimson-accent">
-                {isContractDeployed ? worldSummary.claimedTiles : "100%"}
+                {isContractDeployed ? (
+                  <AnimatedNumber value={worldSummary.claimedTiles} />
+                ) : (
+                  "100%"
+                )}
               </div>
               <div className="text-xs text-ink-muted mt-0.5">
                 {isContractDeployed ? "Claimed Onchain" : "Onchain Routing"}
@@ -220,10 +233,10 @@ export default function LandingPage() {
               <div className="text-xl sm:text-2xl font-extrabold text-emerald-400">
                 {Math.round(eventProgressRatio * 100)}%
               </div>
-              <div className="text-xs text-ink-muted mt-0.5">Beacon World Milestone</div>
+              <div className="text-xs text-ink-muted mt-0.5">The Great Bridge Milestone</div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
       </section>
 
       {/* =====================================================================
@@ -238,7 +251,7 @@ export default function LandingPage() {
         <div className="pointer-events-none absolute left-1/4 top-1/2 -translate-y-1/2 h-96 w-96 rounded-full bg-crimson/10 blur-[140px]" />
 
         <div className="relative z-10 mx-auto max-w-[1600px] space-y-12">
-          <div className="max-w-2xl space-y-3">
+          <ScrollReveal variant="fade-up" className="max-w-2xl space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-crimson/35 bg-[#1B0F11]/85 px-3.5 py-1 text-xs font-semibold text-crimson-accent">
               <Crown className="h-3.5 w-3.5" />
               <span>Three-Tier Civilization Architecture</span>
@@ -251,7 +264,7 @@ export default function LandingPage() {
               simply amass empty plots — territorial dominion requires real infrastructure,
               settlement upgrades, and community coordination.
             </p>
-          </div>
+          </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -297,13 +310,16 @@ export default function LandingPage() {
                   "Automatic onchain unlock of Region 1 (49 new tiles)",
                 ],
               },
-            ].map((tierCard) => {
+            ].map((tierCard, idx) => {
               const Icon = tierCard.icon;
               return (
-                <div
+                <ScrollReveal
                   key={tierCard.tier}
-                  className="group relative rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-7 backdrop-blur-md shadow-panel hover:border-crimson/40 transition-all flex flex-col justify-between"
+                  variant="pop"
+                  delayMs={idx * 110}
+                  className="h-full"
                 >
+                  <div className="gamified-card group relative h-full rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-7 backdrop-blur-md shadow-panel hover:border-crimson/40 transition-all flex flex-col justify-between">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-crimson/35 bg-crimson/15 text-crimson-accent shadow-[0_0_14px_rgba(230,57,70,0.25)]">
@@ -352,7 +368,8 @@ export default function LandingPage() {
                       <ChevronRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>
-                </div>
+                  </div>
+                </ScrollReveal>
               );
             })}
           </div>
@@ -364,7 +381,7 @@ export default function LandingPage() {
          ===================================================================== */}
       <section className="relative border-t border-white/[0.08] bg-[#0A0D0C] py-20 px-4 sm:px-6 lg:px-12">
         <div className="relative z-10 mx-auto max-w-[1600px] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-6 space-y-6">
+          <ScrollReveal variant="slide-left" className="lg:col-span-6 space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-crimson/35 bg-[#1B0F11]/85 px-3.5 py-1 text-xs font-semibold text-crimson-accent">
               <Scale className="h-3.5 w-3.5" />
               <span>Mathematical Fairness By Design</span>
@@ -423,10 +440,14 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </ScrollReveal>
 
           {/* Right: 8x Lighter Cost Breakdown Table (Matching Card Style) */}
-          <div className="lg:col-span-6 rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-6 backdrop-blur-md shadow-panel space-y-4">
+          <ScrollReveal
+            variant="slide-right"
+            delayMs={120}
+            className="gamified-card lg:col-span-6 rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-6 backdrop-blur-md shadow-panel space-y-4"
+          >
             <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
               <div>
                 <h3 className="text-base font-bold text-ink-primary">
@@ -475,13 +496,13 @@ export default function LandingPage() {
             <div className="pt-2">
               <Link
                 href="/rules#calculator"
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] bg-[#161B19] py-3 text-xs font-bold text-ink-primary hover:border-crimson/40 hover:text-white transition-colors"
+                className="gamified-btn w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.1] bg-[#161B19] py-3 text-xs font-bold text-ink-primary hover:border-crimson/40 hover:text-white transition-colors"
               >
                 <span>Launch Interactive Territory Calculator</span>
                 <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
       </section>
 
@@ -550,44 +571,46 @@ export default function LandingPage() {
                   "Sustains logging crews, supports Signal Beacons, and fuels all 5 Settlement Level upgrades.",
                 icon: Sparkles,
               },
-            ].map((arch) => {
+            ].map((arch, idx) => {
               const Icon = arch.icon;
               return (
-                <div
-                  key={arch.tier}
-                  className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-6 backdrop-blur-md shadow-panel space-y-4 hover:border-crimson/40 transition-all"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-crimson/35 bg-crimson/15 text-crimson-accent">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <span className="font-mono text-xs font-semibold text-emerald-400">
-                      {arch.cost}
-                    </span>
-                  </div>
+                <ScrollReveal key={arch.tier} variant="pop" delayMs={idx * 100}>
+                  <div className="gamified-card h-full rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-6 backdrop-blur-md shadow-panel space-y-4 hover:border-crimson/40 transition-all">
+                    <div className="flex items-center justify-between">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-crimson/35 bg-crimson/15 text-crimson-accent">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <span className="font-mono text-xs font-semibold text-emerald-400">
+                        {arch.cost}
+                      </span>
+                    </div>
 
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-ink-dim">
-                      {arch.tier}
-                    </span>
-                    <h3 className="text-lg font-bold text-ink-primary">{arch.name}</h3>
-                  </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-ink-dim">
+                        {arch.tier}
+                      </span>
+                      <h3 className="text-lg font-bold text-ink-primary">{arch.name}</h3>
+                    </div>
 
-                  <div className="space-y-2 text-xs">
-                    <p className="text-ink-secondary">
-                      <strong className="text-ink-primary">Output:</strong> {arch.material}
-                    </p>
-                    <p className="text-ink-muted">
-                      <strong className="text-ink-primary">Gameplay Function:</strong> {arch.benefit}
-                    </p>
+                    <div className="space-y-2 text-xs">
+                      <p className="text-ink-secondary">
+                        <strong className="text-ink-primary">Output:</strong> {arch.material}
+                      </p>
+                      <p className="text-ink-muted">
+                        <strong className="text-ink-primary">Gameplay Function:</strong> {arch.benefit}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </ScrollReveal>
               );
             })}
           </div>
 
           {/* 5 Settlement Levels Banner */}
-          <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-6 backdrop-blur-md shadow-panel space-y-4">
+          <ScrollReveal
+            variant="scale-glow"
+            className="gamified-card rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-6 backdrop-blur-md shadow-panel space-y-4"
+          >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-wider text-crimson-accent">
@@ -624,7 +647,7 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </ScrollReveal>
 
           {/* 6 Production & Strategic Structure Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -671,33 +694,32 @@ export default function LandingPage() {
                 badge: "Regional Relay",
                 desc: "High-elevation relay linking your settlement network to Regional Projects and unlocking Level 5 Capitals.",
               },
-            ].map((st) => {
+            ].map((st, idx) => {
               const Icon = st.icon;
               return (
-                <div
-                  key={st.name}
-                  className="rounded-2xl border border-white/[0.08] bg-[#111514]/88 p-5 backdrop-blur-md shadow-panel space-y-3 hover:border-crimson/40 transition-all"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-crimson-accent">
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <span className="font-mono text-xs text-crimson-accent font-semibold">
-                      {st.cost}
-                    </span>
-                  </div>
+                <ScrollReveal key={st.name} variant="pop" delayMs={idx * 75}>
+                  <div className="gamified-card h-full rounded-2xl border border-white/[0.08] bg-[#111514]/88 p-5 backdrop-blur-md shadow-panel space-y-3 hover:border-crimson/40 transition-all">
+                    <div className="flex items-center justify-between">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-crimson-accent">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="font-mono text-xs text-crimson-accent font-semibold">
+                        {st.cost}
+                      </span>
+                    </div>
 
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                      {st.badge}
-                    </span>
-                    <h4 className="text-sm font-bold text-ink-primary">{st.name}</h4>
-                  </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                        {st.badge}
+                      </span>
+                      <h4 className="text-sm font-bold text-ink-primary">{st.name}</h4>
+                    </div>
 
-                  <p className="text-xs text-ink-muted leading-relaxed">
-                    {st.desc}
-                  </p>
-                </div>
+                    <p className="text-xs text-ink-muted leading-relaxed">
+                      {st.desc}
+                    </p>
+                  </div>
+                </ScrollReveal>
               );
             })}
           </div>
@@ -716,26 +738,26 @@ export default function LandingPage() {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0A0D0C] via-[#0A0D0C]/90 to-transparent" />
 
         <div className="relative z-10 mx-auto max-w-[1600px] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 space-y-6">
+          <ScrollReveal variant="scale-glow" className="lg:col-span-7 space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-crimson/40 bg-crimson-muted/60 px-3.5 py-1 text-xs font-semibold text-crimson-accent">
               <Flame className="h-3.5 w-3.5 animate-pulse" />
               <span>Active Regional Objective • Central Crownlands</span>
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-extrabold text-ink-primary tracking-tight">
-              {worldEvent.title || "Build the Beacon of Hope"}
+              {worldEvent.title || "The Great Bridge"}
             </h2>
 
             <p className="text-sm sm:text-base text-ink-secondary leading-relaxed max-w-xl">
-              A monumental collaborative world project located at Tile (0, 3).
+              A monumental collaborative world project located at Tile (3, 0).
               Every builder can contribute $WIF. When the community pool reaches
-              1,250 $WIF, the smart contract fires an immutable state event that unlocks
-              <strong className="text-ink-primary"> Region 1: The Wild Frontier (49 brand new tiles)</strong> for
+              100%, the smart contract fires an immutable state event that unlocks
+              <strong className="text-ink-primary"> Region 2: The Wild Frontier (49 brand new tiles)</strong> for
               the entire world.
             </p>
 
             {/* Event Progress Bar Card */}
-            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/92 p-6 backdrop-blur-md shadow-panel space-y-4 max-w-xl">
+            <div className="gamified-card rounded-2xl border border-white/[0.09] bg-[#111514]/92 p-6 backdrop-blur-md shadow-panel space-y-4 max-w-xl">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-ink-muted">Global Contribution Progress</span>
                 <span className="font-mono font-bold text-crimson-accent">
@@ -764,20 +786,20 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <Link
                 href="/events"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-crimson-accent to-crimson px-6 py-3.5 text-sm font-bold text-white shadow-crimson hover:brightness-110 transition-all"
+                className="gamified-btn inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-crimson-accent to-crimson px-6 py-3.5 text-sm font-bold text-white shadow-crimson hover:brightness-110 transition-all"
               >
                 <span>Contribute $WIF to Monument</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/world"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/[0.12] bg-[#141817]/85 px-5 py-3.5 text-sm font-semibold text-ink-primary hover:border-white/25 hover:bg-[#1B201F] backdrop-blur-sm transition-all"
+                className="gamified-btn inline-flex items-center gap-2 rounded-xl border border-white/[0.12] bg-[#141817]/85 px-5 py-3.5 text-sm font-semibold text-ink-primary hover:border-white/25 hover:bg-[#1B201F] backdrop-blur-sm transition-all"
               >
-                <span>Locate Tile (0, 3)</span>
+                <span>Locate Tile (3, 0)</span>
                 <MapPin className="h-4 w-4 text-crimson-accent" />
               </Link>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
       </section>
 
@@ -786,7 +808,7 @@ export default function LandingPage() {
          ===================================================================== */}
       <section className="relative border-t border-white/[0.08] bg-[#0E1211] py-20 px-4 sm:px-6 lg:px-12">
         <div className="relative z-10 mx-auto max-w-[1600px] space-y-12">
-          <div className="max-w-2xl space-y-3">
+          <ScrollReveal variant="fade-up" className="max-w-2xl space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-crimson/35 bg-[#1B0F11]/85 px-3.5 py-1 text-xs font-semibold text-crimson-accent">
               <ShieldCheck className="h-3.5 w-3.5" />
               <span>Verifiable Architecture & Transparency</span>
@@ -799,7 +821,7 @@ export default function LandingPage() {
               is an authoritative transaction on Robinhood Chain. There are no centralized
               game master backdoors or offchain databases.
             </p>
-          </div>
+          </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
@@ -823,19 +845,18 @@ export default function LandingPage() {
                 desc: "All WIFWorlds.sol smart contracts are open-source and verified on the official Robinhood Chain Blockscout explorer.",
                 icon: ExternalLink,
               },
-            ].map((trust) => {
+            ].map((trust, idx) => {
               const Icon = trust.icon;
               return (
-                <div
-                  key={trust.title}
-                  className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-6 backdrop-blur-md shadow-panel space-y-3 hover:border-crimson/40 transition-all"
-                >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-crimson/35 bg-crimson/15 text-crimson-accent">
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <h3 className="text-base font-bold text-ink-primary">{trust.title}</h3>
-                  <p className="text-xs text-ink-muted leading-relaxed">{trust.desc}</p>
-                </div>
+                <ScrollReveal key={trust.title} variant="pop" delayMs={idx * 90}>
+                  <div className="gamified-card h-full rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-6 backdrop-blur-md shadow-panel space-y-3 hover:border-crimson/40 transition-all">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-crimson/35 bg-crimson/15 text-crimson-accent">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <h3 className="text-base font-bold text-ink-primary">{trust.title}</h3>
+                    <p className="text-xs text-ink-muted leading-relaxed">{trust.desc}</p>
+                  </div>
+                </ScrollReveal>
               );
             })}
           </div>
@@ -846,7 +867,7 @@ export default function LandingPage() {
           7. LIVE WORLD ACTIVITY STREAM SHOWCASE
          ===================================================================== */}
       <section className="relative border-t border-white/[0.08] bg-[#0A0D0C] py-20 px-4 sm:px-6 lg:px-12">
-        <div className="relative z-10 mx-auto max-w-[1600px] space-y-8">
+        <ScrollReveal variant="fade-up" className="relative z-10 mx-auto max-w-[1600px] space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-2 text-xs font-semibold text-crimson-accent">
@@ -861,14 +882,14 @@ export default function LandingPage() {
             <button
               type="button"
               onClick={refreshAllWorldState}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-[#141817] px-4 py-2 text-xs font-semibold text-ink-secondary hover:text-white transition-colors self-start sm:self-auto"
+              className="gamified-btn inline-flex items-center gap-2 rounded-xl border border-white/[0.1] bg-[#141817] px-4 py-2 text-xs font-semibold text-ink-secondary hover:text-white transition-colors self-start sm:self-auto"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", isLoadingWorld && "animate-spin")} />
               <span>Refresh Ledger</span>
             </button>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-6 backdrop-blur-md shadow-panel">
+          <div className="gamified-card rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-6 backdrop-blur-md shadow-panel">
             {activities.length === 0 ? (
               <div className="py-12 text-center space-y-3">
                 <Compass className="h-8 w-8 text-ink-dim mx-auto animate-spin" />
@@ -925,14 +946,14 @@ export default function LandingPage() {
               </div>
             )}
           </div>
-        </div>
+        </ScrollReveal>
       </section>
 
       {/* =====================================================================
           8. FREQUENTLY ASKED QUESTIONS (ACCORDION)
          ===================================================================== */}
       <section className="relative border-t border-white/[0.08] bg-[#0E1211] py-20 px-4 sm:px-6 lg:px-12">
-        <div className="relative z-10 mx-auto max-w-4xl space-y-8">
+        <ScrollReveal variant="fade-up" className="relative z-10 mx-auto max-w-4xl space-y-8">
           <div className="text-center space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-crimson/35 bg-[#1B0F11]/85 px-3.5 py-1 text-xs font-semibold text-crimson-accent">
               <HelpCircle className="h-3.5 w-3.5" />
@@ -950,29 +971,28 @@ export default function LandingPage() {
             {FAQS.map((faq, idx) => {
               const isOpen = openFaq === idx;
               return (
-                <div
-                  key={idx}
-                  className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel overflow-hidden transition-all"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="flex w-full items-center justify-between p-5 text-left text-sm sm:text-base font-bold text-ink-primary hover:text-crimson-accent transition-colors"
-                  >
-                    <span>{faq.q}</span>
-                    <ChevronDown
-                      className={cn(
-                        "h-4 w-4 text-ink-muted shrink-0 transition-transform duration-300",
-                        isOpen && "rotate-180 text-crimson-accent"
-                      )}
-                    />
-                  </button>
-                  {isOpen && (
-                    <div className="border-t border-white/[0.06] p-5 pt-3 text-xs sm:text-sm text-ink-secondary leading-relaxed bg-[#0F1312]/60">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
+                <ScrollReveal key={idx} variant="pop" delayMs={idx * 65}>
+                  <div className="gamified-card rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel overflow-hidden transition-all">
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(isOpen ? null : idx)}
+                      className="flex w-full items-center justify-between p-5 text-left text-sm sm:text-base font-bold text-ink-primary hover:text-crimson-accent transition-colors"
+                    >
+                      <span>{faq.q}</span>
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 text-ink-muted shrink-0 transition-transform duration-300",
+                          isOpen && "rotate-180 text-crimson-accent"
+                        )}
+                      />
+                    </button>
+                    {isOpen && (
+                      <div className="animate-gamified-pop border-t border-white/[0.06] p-5 pt-3 text-xs sm:text-sm text-ink-secondary leading-relaxed bg-[#0F1312]/60">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                </ScrollReveal>
               );
             })}
           </div>
@@ -986,7 +1006,7 @@ export default function LandingPage() {
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-        </div>
+        </ScrollReveal>
       </section>
 
       {/* =====================================================================
@@ -1006,7 +1026,10 @@ export default function LandingPage() {
           }}
         />
 
-        <div className="relative z-10 mx-auto max-w-4xl text-center space-y-6">
+        <ScrollReveal
+          variant="scale-glow"
+          className="relative z-10 mx-auto max-w-4xl text-center space-y-6"
+        >
           <div className="inline-flex items-center gap-2 rounded-full border border-crimson/35 bg-[#1B0F11]/90 px-4 py-1.5 text-xs font-semibold text-crimson-accent backdrop-blur-md">
             <span className="h-2 w-2 rounded-full bg-crimson-accent animate-pulse shadow-[0_0_8px_#FF4D5A]" />
             <span>The Island Awaits Your Mark</span>
@@ -1024,7 +1047,7 @@ export default function LandingPage() {
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             <Link
               href="/world"
-              className="inline-flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-crimson-accent to-crimson px-8 py-4 text-sm sm:text-base font-bold text-white shadow-crimson hover:brightness-110 active:scale-[0.99] transition-all"
+              className="gamified-btn inline-flex items-center gap-2.5 rounded-xl bg-gradient-to-b from-crimson-accent to-crimson px-8 py-4 text-sm sm:text-base font-bold text-white shadow-crimson hover:brightness-110 transition-all"
             >
               <span>Enter The Living Map</span>
               <ArrowRight className="h-4 w-4" />
@@ -1032,13 +1055,13 @@ export default function LandingPage() {
 
             <Link
               href="/rules"
-              className="inline-flex items-center gap-2.5 rounded-xl border border-white/[0.12] bg-[#141817]/90 px-6 py-4 text-sm sm:text-base font-semibold text-ink-primary hover:border-white/25 hover:bg-[#1B201F] backdrop-blur-sm transition-all"
+              className="gamified-btn inline-flex items-center gap-2.5 rounded-xl border border-white/[0.12] bg-[#141817]/90 px-6 py-4 text-sm sm:text-base font-semibold text-ink-primary hover:border-white/25 hover:bg-[#1B201F] backdrop-blur-sm transition-all"
             >
               <BookOpen className="h-4 w-4 text-crimson-accent" />
               <span>Read Strategy Guide</span>
             </Link>
           </div>
-        </div>
+        </ScrollReveal>
       </section>
 
       <FeatureFooterStrip />

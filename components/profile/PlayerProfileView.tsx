@@ -21,7 +21,8 @@ import {
 } from "lucide-react";
 import { TerritoryMiniMap } from "@/components/world/IsometricWorldMap";
 import { FeatureFooterStrip } from "@/components/layout/FeatureFooterStrip";
-import { WifWorldsLogo } from "@/components/brand/WifWorldsLogo";
+import { WifWorldsGameIcon, WifWorldsLogo } from "@/components/brand/WifWorldsLogo";
+import { ScrollReveal, AnimatedNumber } from "@/components/ui/ScrollReveal";
 import {
   explorerAddressUrl,
   explorerTxUrl,
@@ -229,16 +230,17 @@ export function PlayerProfileView({
         ) : (
           <>
             {/* TOP PROFILE HEADER GRID — Matches Panel 5 Reference */}
-            <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left (7 cols): Crest, Identity & 4 Stat Counters */}
-              <div className="lg:col-span-7 rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md p-6 flex flex-col justify-between space-y-6 shadow-panel">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-                  {/* Double-Ring Crimson Geometric Crest (Matches Panel 5) */}
-                  <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-crimson-accent bg-[#1A0E10] shadow-[0_0_24px_rgba(230,57,70,0.35)]">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full border border-crimson/40 bg-[#120A0C]">
-                      <WifWorldsLogo size="sm" className="gap-0 [&>div]:hidden" />
+            <ScrollReveal variant="pop">
+              <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Left (7 cols): Crest, Identity & 4 Stat Counters */}
+                <div className="gamified-card lg:col-span-7 rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md p-6 flex flex-col justify-between space-y-6 shadow-panel">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+                    {/* Double-Ring Crimson Geometric Crest (Matches Panel 5) */}
+                    <div className="animate-pulse-glow relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-crimson-accent bg-[#1A0E10] shadow-[0_0_24px_rgba(230,57,70,0.35)]">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full border border-crimson/40 bg-[#120A0C]">
+                        <WifWorldsGameIcon className="w-10 h-10" />
+                      </div>
                     </div>
-                  </div>
 
                   <div className="space-y-2 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -303,7 +305,7 @@ export function PlayerProfileView({
               </div>
 
               {/* Right (5 cols): Activity Score + Player Territory Mini-Map (Matches Panel 5!) */}
-              <div className="lg:col-span-5 rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md p-6 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-panel">
+              <div className="gamified-card lg:col-span-5 rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md p-6 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-panel">
                 <div className="space-y-3 w-full sm:w-auto flex-1">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-ink-secondary">
                     <span>Activity Score</span>
@@ -316,7 +318,7 @@ export function PlayerProfileView({
                   </div>
 
                   <div className="font-mono text-4xl font-extrabold text-crimson-accent">
-                    {playerStats.activityScore.toLocaleString()}
+                    <AnimatedNumber value={playerStats.activityScore} />
                   </div>
 
                   <div className="h-1.5 w-full max-w-[180px] overflow-hidden rounded-full bg-white/[0.08]">
@@ -349,7 +351,8 @@ export function PlayerProfileView({
                   </div>
                 </div>
               </div>
-            </section>
+              </section>
+            </ScrollReveal>
 
             {/* BOTTOM ACTIVITY & ASSETS SECTION — Matches Panel 5 Reference */}
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">

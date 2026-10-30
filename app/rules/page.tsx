@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { WifTokenEmblem } from "@/components/brand/WifWorldsLogo";
 import { FeatureFooterStrip } from "@/components/layout/FeatureFooterStrip";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import {
   DEFAULT_COSTS,
   getNextSettlementCost,
@@ -120,8 +121,9 @@ export default function GameRulesPage() {
   }, [computedMaxTiles, calcSettlements, calcUpgrades, calcOutposts]);
 
   return (
-    <main className="flex-1 flex flex-col bg-obsidian text-ink-primary">
+    <main className="animate-page-enter flex-1 flex flex-col bg-obsidian text-ink-primary">
       {/* 1. HERO BANNER — Matches Landing Page Castle Theme */}
+      <ScrollReveal variant="pop">
       <section className="relative overflow-hidden border-b border-white/[0.08] py-16 lg:py-24 px-4 sm:px-6 lg:px-8">
         {/* Background Key Art (Floating Citadels at Crimson Dusk) */}
         <div
@@ -201,9 +203,11 @@ export default function GameRulesPage() {
           </div>
         </div>
       </section>
+      </ScrollReveal>
 
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-12 space-y-16">
         {/* 2. QUICK START (0 to 1) */}
+        <ScrollReveal variant="fade-up">
         <section id="quick-start" className="space-y-6">
           <div className="flex items-center gap-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-crimson/20 text-crimson-accent font-mono font-bold text-sm">
@@ -220,7 +224,7 @@ export default function GameRulesPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-crimson/40 transition-all">
+            <div className="gamified-card rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-crimson/40 transition-all">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-crimson/15 text-crimson-accent font-mono font-bold text-xs border border-crimson/30">
                 01
               </div>
@@ -231,7 +235,7 @@ export default function GameRulesPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-crimson/40 transition-all">
+            <div className="gamified-card rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-crimson/40 transition-all">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-crimson/15 text-crimson-accent font-mono font-bold text-xs border border-crimson/30">
                 02
               </div>
@@ -245,7 +249,7 @@ export default function GameRulesPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-crimson/40 transition-all">
+            <div className="gamified-card rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-crimson/40 transition-all">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-crimson/15 text-crimson-accent font-mono font-bold text-xs border border-crimson/30">
                 03
               </div>
@@ -257,7 +261,7 @@ export default function GameRulesPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-crimson/40 transition-all">
+            <div className="gamified-card rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-crimson/40 transition-all">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-crimson/15 text-crimson-accent font-mono font-bold text-xs border border-crimson/30">
                 04
               </div>
@@ -269,6 +273,7 @@ export default function GameRulesPage() {
             </div>
           </div>
         </section>
+        </ScrollReveal>
 
         {/* 3. 3-TIER CIVILIZATION PROGRESSION */}
         <section id="progression" className="space-y-6">

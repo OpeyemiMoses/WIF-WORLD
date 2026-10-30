@@ -132,3 +132,4 @@ export async function DELETE(req: NextRequest) {
   res.cookies.delete(SESSION_COOKIE);
   return res;
 }
+

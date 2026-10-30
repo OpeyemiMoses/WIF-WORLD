@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="16" fill="#0B0D0C"/>
+  <defs>
+    <linearGradient id="wifCrimsonTop" x1="16" y1="6" x2="48" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF5E6A"/>
+      <stop offset="55%" stop-color="#E63946"/>
+      <stop offset="100%" stop-color="#B01E2B"/>
+    </linearGradient>
+    <linearGradient id="wifCrimsonLeft" x1="8" y1="20" x2="34" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF4D5A"/>
+      <stop offset="100%" stop-color="#9E1B26"/>
+    </linearGradient>
+    <linearGradient id="wifCrimsonRight" x1="32" y1="20" x2="56" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF6B76"/>
+      <stop offset="100%" stop-color="#C82836"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer subtle crimson glow ring -->
+  <circle cx="32" cy="32" r="29" stroke="#E63946" stroke-opacity="0.28" stroke-width="1.5"/>
+  <!-- Top Isometric Crown Peak with inner dark cutout -->
+  <polygon points="31,7 46,21 31,34 16,21" fill="url(#wifCrimsonTop)"/>
+  <polygon points="31,15 38,21.5 31,27.5 24,21.5" fill="#0B0D0C"/>
+  <!-- Left Wing Bastion (W left stroke) -->
+  <polygon points="9,28 19,18 28,27 18,37" fill="url(#wifCrimsonLeft)"/>
+  <polygon points="9,28 18,37 28,47 19,55 9,44" fill="#C92835"/>
+  <!-- Center-Left Isometric Diamond Facet -->
+  <polygon points="29,36 39,27 47,35 37,45" fill="#FF4D5A"/>
+  <!-- Lower-Right Detached Isometric Tile (Living Map signature facet) -->
+  <polygon points="41,49 49,41 56,48 48,56" fill="url(#wifCrimsonRight)"/>
+  <!-- Right Upper Wing -->
+  <polygon points="46,21 55,29 48,36 39,27" fill="#B8202D"/>
+</svg>
