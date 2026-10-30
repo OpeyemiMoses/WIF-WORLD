@@ -10,7 +10,7 @@ A persistent, multiplayer onchain strategy & civilization game built on **Robinh
 | **Chain ID** | `4663` (`0x1237`) |
 | **RPC URL** | `https://rpc.mainnet.chain.robinhood.com` |
 | **Block Explorer** | [https://robinhoodchain.blockscout.com](https://robinhoodchain.blockscout.com) |
-| **`WIFWorlds` Game Contract** | [`0xAa2dd131F596249755CCcdcc48447C1434AC109B`](https://robinhoodchain.blockscout.com/address/0xAa2dd131F596249755CCcdcc48447C1434AC109B) |
+| **`WIFWorlds` Game Contract** | [`0xaA2dd131f596249755cCcdcC48447C1434Ac109B`](https://robinhoodchain.blockscout.com/address/0xaA2dd131f596249755cCcdcC48447C1434Ac109B) |
 | **Official `$WIF` Token** | [`0x5173b8ea6923c2d40267890d45c46a3480954773`](https://robinhoodchain.blockscout.com/token/0x5173b8ea6923c2d40267890d45c46a3480954773) (18 decimals) |
 | **Treasury & Admin Wallet** | [`0x479253b82Eb63eb36F140EcABf0237cc338084e7`](https://robinhoodchain.blockscout.com/address/0x479253b82Eb63eb36F140EcABf0237cc338084e7) |
 | **Deployment Transaction** | [`0xf48366cf80a028a7e4af3c28230aceda787da19a5bda5e32713226ea5f20ea65`](https://robinhoodchain.blockscout.com/tx/0xf48366cf80a028a7e4af3c28230aceda787da19a5bda5e32713226ea5f20ea65) |
