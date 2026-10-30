@@ -35,7 +35,7 @@ export default function RootLayout({
       <body className="h-full min-h-screen bg-obsidian font-sans text-ink-primary flex flex-col selection:bg-crimson selection:text-white">
         <Web3Provider>
           <TopNav />
-          <div className="flex-1 flex flex-col min-h-0 pt-16">{children}</div>
+          <div className="flex-1 flex flex-col min-h-0 pt-14 sm:pt-16 max-lg:landscape:pt-12">{children}</div>
         </Web3Provider>
       </body>
     </html>

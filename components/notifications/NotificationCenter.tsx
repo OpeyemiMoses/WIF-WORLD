@@ -438,7 +438,7 @@ export function NotificationCenter() {
 
           {/* Notification Items List */}
           <div
-            className="max-h-80 overflow-y-auto divide-y divide-white/[0.1] bg-[#0E1312]"
+            className="max-h-[min(320px,55dvh)] overflow-y-auto divide-y divide-white/[0.1] bg-[#0E1312]"
             style={{ backgroundColor: "#0E1312" }}
           >
             {!isConnected ? (

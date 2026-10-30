@@ -133,9 +133,9 @@ export function WifWorldsLogo({
       >
         <span
           className={cn(
-            "font-extrabold uppercase tracking-[0.14em] text-ink-primary leading-none transition-colors duration-300 group-hover/logo:text-white",
+            "whitespace-nowrap font-extrabold uppercase tracking-[0.14em] text-ink-primary leading-none transition-colors duration-300 group-hover/logo:text-white",
             size === "sm" && "text-sm",
-            size === "md" && "text-[15px]",
+            size === "md" && "text-[14px] sm:text-[15px]",
             size === "lg" && "text-2xl",
             size === "xl" && "text-3xl"
           )}
@@ -145,7 +145,7 @@ export function WifWorldsLogo({
         {showSubtitle && (
           <span
             className={cn(
-              "font-semibold uppercase tracking-[0.28em] text-crimson-accent mt-1 leading-none",
+              "whitespace-nowrap font-semibold uppercase tracking-[0.28em] text-crimson-accent mt-1 leading-none",
               size === "lg" || size === "xl" ? "text-[11px]" : "text-[9px]"
             )}
           >

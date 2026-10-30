@@ -566,17 +566,17 @@ export function BuildActionModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-6 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-2 sm:p-5 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="build-panel-title"
     >
-      <div className="animate-gamified-pop relative my-auto w-full max-w-4xl rounded-3xl border border-white/[0.12] bg-[#111514]/96 backdrop-blur-xl shadow-panel overflow-hidden">
+      <div className="animate-gamified-pop relative my-auto w-full max-w-4xl max-h-[92dvh] flex flex-col rounded-2xl sm:rounded-3xl border border-white/[0.12] bg-[#111514]/96 backdrop-blur-xl shadow-panel overflow-hidden">
         {/* Top Modal Bar */}
-        <div className="flex items-center justify-between border-b border-white/[0.08] bg-[#141918]/90 px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <span className="h-2 w-2 rounded-full bg-crimson-accent shadow-[0_0_8px_#FF4D5A]" />
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-secondary">
+        <div className="shrink-0 flex items-center justify-between border-b border-white/[0.08] bg-[#141918]/90 px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="h-2 w-2 shrink-0 rounded-full bg-crimson-accent shadow-[0_0_8px_#FF4D5A]" />
+            <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.14em] sm:tracking-[0.18em] text-ink-secondary truncate">
               Civilization Build, Economy & Progression Panel
             </span>
           </div>
@@ -584,14 +584,14 @@ export function BuildActionModal({
             type="button"
             onClick={onClose}
             disabled={isBusy}
-            className="rounded-lg p-1.5 text-ink-muted hover:bg-white/[0.06] hover:text-white disabled:opacity-40 transition-colors"
+            className="shrink-0 rounded-lg p-1.5 text-ink-muted hover:bg-white/[0.06] hover:text-white disabled:opacity-40 transition-colors"
             aria-label="Close panel"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-5 sm:p-7">
+        <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 p-4 sm:p-7">
           {/* LEFT COLUMN (7 cols) */}
           <div className="lg:col-span-7 flex flex-col justify-between space-y-4 rounded-2xl border border-white/[0.09] bg-[#161B19]/80 p-5">
             <div className="space-y-4">

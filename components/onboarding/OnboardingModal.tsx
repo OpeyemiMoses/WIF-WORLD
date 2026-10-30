@@ -247,21 +247,21 @@ export function OnboardingModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-6 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-2 sm:p-5 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="onboarding-title"
     >
-      <div className="relative my-auto w-full max-w-3xl rounded-3xl border border-amber-200/20 bg-[#101413]/96 shadow-[0_28px_90px_rgba(0,0,0,0.88)] backdrop-blur-xl overflow-hidden">
+      <div className="relative my-auto w-full max-w-3xl max-h-[92dvh] flex flex-col rounded-2xl sm:rounded-3xl border border-amber-200/20 bg-[#101413]/96 shadow-[0_28px_90px_rgba(0,0,0,0.88)] backdrop-blur-xl overflow-hidden">
         {/* Top Header + Step Progress Indicator */}
-        <div className="flex items-center justify-between border-b border-white/[0.08] bg-[#141918]/95 px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-crimson-accent shadow-[0_0_8px_#FF4D5A]" />
-            <span className="text-xs font-bold uppercase tracking-[0.18em] text-amber-200/90">
+        <div className="shrink-0 flex items-center justify-between border-b border-white/[0.08] bg-[#141918]/95 px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-crimson-accent shadow-[0_0_8px_#FF4D5A]" />
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.14em] sm:tracking-[0.18em] text-amber-200/90 truncate">
               Pioneer Onboarding • Step {step} of 7
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={handleSkipOrClose}
@@ -281,7 +281,7 @@ export function OnboardingModal({
         </div>
 
         {/* 7-Step Progress Bar */}
-        <div className="grid grid-cols-7 gap-1 bg-[#0C0F0E] px-6 py-2.5 border-b border-white/[0.06]">
+        <div className="shrink-0 grid grid-cols-7 gap-1 bg-[#0C0F0E] px-4 py-2 sm:px-6 sm:py-2.5 border-b border-white/[0.06]">
           {STEP_TITLES.map((s) => {
             const active = step === s.step;
             const done = step > s.step;
@@ -320,7 +320,7 @@ export function OnboardingModal({
         </div>
 
         {/* Step Body */}
-        <div className="p-6 sm:p-8 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-5 sm:space-y-6">
           {/* STEP 1: WELCOME */}
           {step === 1 && (
             <div className="space-y-6 text-center py-4">
@@ -985,7 +985,7 @@ export function OnboardingModal({
         </div>
 
         {/* Footer Navigation Controls */}
-        <div className="flex items-center justify-between border-t border-white/[0.08] bg-[#141918]/95 px-6 py-4">
+        <div className="shrink-0 flex items-center justify-between border-t border-white/[0.08] bg-[#141918]/95 px-4 py-3 sm:px-6 sm:py-4">
           <button
             type="button"
             disabled={step <= 1}

@@ -76,6 +76,7 @@ export default function WorldScreen() {
     useState<WorldActionKind>("claim");
   const [activeDrawer, setActiveDrawer] = useState<HudDrawerTab>(null);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
   const [visitedBuilderAddress, setVisitedBuilderAddress] = useState<
     `0x${string}` | null
   >(null);
@@ -428,7 +429,7 @@ export default function WorldScreen() {
   const completedMissionsCount = missions.filter((m) => m.completed).length;
 
   return (
-    <div className="animate-page-enter flex-1 flex flex-col landscape:flex-row lg:flex-row w-full h-full min-h-0 overflow-hidden bg-[#050C0F]">
+    <div className="animate-page-enter flex-1 flex flex-col landscape:flex-row lg:flex-row w-full h-[calc(100dvh-3.5rem)] sm:h-[calc(100dvh-4rem)] max-lg:landscape:h-[calc(100dvh-3rem)] min-h-0 overflow-hidden bg-[#050C0F]">
       {/* Mobile Portrait Blocker Overlay — instructs mobile users to rotate to Landscape Mode */}
       <MobileLandscapeGuard />
 
@@ -436,9 +437,138 @@ export default function WorldScreen() {
       <GameEventCelebration event={celebrationEvent} />
 
       {/* LEFT / CENTER: Interactive 7x7 Isometric World Viewport */}
-      <div className="relative flex-1 min-h-[340px] landscape:min-h-0 lg:min-h-0 h-full w-full overflow-hidden bg-[#050C0F]">
-        {/* Top-Left Floating HUD: World Briefing + Multiplayer Tabs (Feed / Missions / Rankings) */}
-        <div className="absolute left-3 top-3 sm:left-4 sm:top-4 z-20 w-[268px] sm:w-[336px] max-lg:landscape:w-[250px] max-lg:landscape:p-2.5 rounded-2xl border border-white/[0.1] bg-[#101413]/92 p-4 shadow-panel backdrop-blur-md space-y-2.5 max-lg:landscape:space-y-1.5">
+      <div className="relative flex-1 min-h-[45dvh] landscape:min-h-0 lg:min-h-0 h-full w-full overflow-hidden bg-[#050C0F]">
+        {/* =====================================================================
+            MOBILE & TABLET COMPACT TOP HUD (< 1024px) — Zero Overlap Widescreen Bar
+           ===================================================================== */}
+        <div className="lg:hidden absolute left-2 right-11 top-2 z-20 flex flex-col gap-1.5 pointer-events-none">
+          {/* Row 1: Single-Line Horizontal Scrollable Region Bar + Tutorial + Panel Toggle */}
+          <div className="pointer-events-auto inline-flex items-center gap-1 overflow-x-auto rounded-xl border border-white/[0.1] bg-[#101413]/92 p-1 backdrop-blur-md shadow-panel max-w-full w-fit [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {REGIONS.map((reg) => {
+              const unlocked = Boolean(regionUnlockedMap[reg.id]);
+              const selected = activeRegionId === reg.id;
+              return (
+                <button
+                  key={reg.id}
+                  type="button"
+                  onClick={() => handleSelectRegion(reg.id)}
+                  className={cn(
+                    "shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-all",
+                    selected
+                      ? "bg-crimson text-white shadow-crimson-sm"
+                      : "text-ink-secondary hover:text-white hover:bg-white/[0.04]"
+                  )}
+                >
+                  {unlocked ? (
+                    <Compass className="h-2.5 w-2.5 shrink-0" />
+                  ) : (
+                    <Lock className="h-2.5 w-2.5 text-amber-400 shrink-0" />
+                  )}
+                  <span>{reg.name.replace(/^The\s+(Wild\s+)?/i, "")}</span>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setOnboardingOpen(true)}
+              className="shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded-lg border border-amber-300/25 bg-amber-400/10 px-2 py-1 text-[10px] font-semibold text-amber-200 hover:bg-amber-400/20"
+            >
+              <BookOpen className="h-2.5 w-2.5" />
+              <span>Tutorial</span>
+            </button>
+          </div>
+
+          {/* Row 2: Compact Event Pill + Multiplayer Drawer Tabs */}
+          <div className="pointer-events-auto flex flex-wrap items-center gap-1">
+            <div className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.1] bg-[#101413]/92 px-2.5 py-1 text-[10px] backdrop-blur-md shadow-panel">
+              <span className="h-1.5 w-1.5 rounded-full bg-crimson-accent animate-pulse shrink-0" />
+              <span className="font-bold text-ink-primary whitespace-nowrap">
+                {worldEvent.title}
+              </span>
+              <span className="font-mono text-ink-secondary whitespace-nowrap">
+                {formatWif(worldEvent.totalContributed, 0)}/
+                {formatWif(worldEvent.targetAmount, 0)} $WIF
+              </span>
+              <Link
+                href="/events"
+                className="font-semibold text-crimson-accent hover:underline whitespace-nowrap"
+              >
+                Contribute →
+              </Link>
+            </div>
+
+            <div className="inline-flex items-center gap-1 rounded-xl border border-white/[0.1] bg-[#101413]/92 p-0.5 backdrop-blur-md shadow-panel">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveDrawer((cur) =>
+                    cur === "missions" ? null : "missions"
+                  )
+                }
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-all whitespace-nowrap",
+                  activeDrawer === "missions"
+                    ? "bg-crimson text-white"
+                    : "text-ink-secondary hover:text-white"
+                )}
+              >
+                <Target className="h-2.5 w-2.5" />
+                <span>
+                  Missions ({completedMissionsCount}/{missions.length})
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveDrawer((cur) =>
+                    cur === "rankings" ? null : "rankings"
+                  )
+                }
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-all whitespace-nowrap",
+                  activeDrawer === "rankings"
+                    ? "bg-crimson text-white"
+                    : "text-ink-secondary hover:text-white"
+                )}
+              >
+                <Trophy className="h-2.5 w-2.5" />
+                <span>Rank ({regionalRankings.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveDrawer((cur) => (cur === "feed" ? null : "feed"))
+                }
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-all whitespace-nowrap",
+                  activeDrawer === "feed"
+                    ? "bg-crimson text-white"
+                    : "text-ink-secondary hover:text-white"
+                )}
+              >
+                <Activity className="h-2.5 w-2.5" />
+                <span>Feed ({activities.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen((v) => !v)}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-semibold transition-colors whitespace-nowrap",
+                  mobileSidebarOpen
+                    ? "border-white/[0.12] bg-white/[0.06] text-ink-secondary hover:text-white"
+                    : "border-crimson/45 bg-crimson/20 text-crimson-accent"
+                )}
+              >
+                <span>{mobileSidebarOpen ? "Hide Panel" : "Show Panel"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* =====================================================================
+            DESKTOP FLOATING HUD (>= 1024px) — World Briefing + Region & Economy
+           ===================================================================== */}
+        <div className="hidden lg:block absolute left-4 top-4 z-20 w-[336px] rounded-2xl border border-white/[0.1] bg-[#101413]/92 p-4 shadow-panel backdrop-blur-md space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-crimson-accent">
               <span className="h-2 w-2 rounded-full bg-crimson-accent animate-pulse shadow-[0_0_8px_#FF4D5A]" />
@@ -551,8 +681,8 @@ export default function WorldScreen() {
           </div>
         </div>
 
-        {/* Top Region Switcher + Live Resource Economy Bar (All 4 Onchain Maps wired) */}
-        <div className="hidden md:flex landscape:flex absolute left-[264px] sm:left-[356px] right-[52px] top-3 sm:top-4 z-20 flex-col items-end xl:items-center gap-2 pointer-events-none">
+        {/* Desktop Top Region Switcher + Live Resource Economy Bar */}
+        <div className="hidden lg:flex absolute left-[356px] right-[52px] top-4 z-20 flex-col items-end xl:items-center gap-2 pointer-events-none">
           <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1 rounded-xl border border-white/[0.1] bg-[#101413]/92 p-1 backdrop-blur-md shadow-panel">
             {REGIONS.map((reg) => {
               const unlocked = Boolean(regionUnlockedMap[reg.id]);
@@ -563,7 +693,7 @@ export default function WorldScreen() {
                   type="button"
                   onClick={() => handleSelectRegion(reg.id)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-semibold transition-all",
+                    "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all",
                     selected
                       ? "bg-crimson text-white shadow-crimson-sm"
                       : "text-ink-secondary hover:text-white hover:bg-white/[0.04]"
@@ -575,7 +705,7 @@ export default function WorldScreen() {
                   ) : (
                     <Lock className="h-3 w-3 text-amber-400 shrink-0" />
                   )}
-                  <span className=" whitespace-nowrap">{reg.name}</span>
+                  <span className="whitespace-nowrap">{reg.name}</span>
                 </button>
               );
             })}
@@ -590,9 +720,9 @@ export default function WorldScreen() {
             </button>
           </div>
 
-          {/* Live In-Game Resource Ticker Pill (Wood, Stone, Food + Harvest CTA) */}
+          {/* Live In-Game Resource Ticker Pill (Shown on xl+ screens; sidebar always shows full resource vault) */}
           <div
-            className="pointer-events-auto flex items-center gap-3 rounded-xl border border-white/[0.1] bg-[#101413]/92 px-3.5 py-1.5 text-xs backdrop-blur-md shadow-panel"
+            className="hidden xl:flex pointer-events-auto items-center gap-3 rounded-xl border border-white/[0.1] bg-[#101413]/92 px-3.5 py-1.5 text-xs backdrop-blur-md shadow-panel"
             title={`Total Materials: ${Math.floor(playerStats.wood)} Wood • ${Math.floor(playerStats.stone)} Stone • ${Math.floor(playerStats.food)} Food. Vault Storage: ${playerStats.storedWood}W • ${playerStats.storedStone}S • ${playerStats.storedFood}F (Cap ${playerStats.storageCap})`}
           >
             <div
@@ -683,7 +813,7 @@ export default function WorldScreen() {
 
         {/* Settlement Visit Banner ("Inspect Another Builder's Realm Mode") */}
         {visitedBuilderAddress && visitedBuilderStats && (
-          <div className="absolute left-1/2 -translate-x-1/2 bottom-16 z-30 flex flex-wrap items-center gap-3 rounded-2xl border border-[#2DD4BF]/45 bg-[#0D1918]/95 px-4 py-2.5 text-xs shadow-panel backdrop-blur-md">
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-12 lg:bottom-16 z-30 flex flex-wrap items-center gap-2.5 lg:gap-3 rounded-2xl border border-[#2DD4BF]/45 bg-[#0D1918]/95 px-3 py-2 lg:px-4 lg:py-2.5 text-[11px] lg:text-xs shadow-panel backdrop-blur-md">
             <div className="flex items-center gap-2">
               <Eye className="h-4 w-4 text-[#2DD4BF]" />
               <div>
@@ -718,9 +848,9 @@ export default function WorldScreen() {
         {activeDrawer && (
           <div
             key={activeDrawer}
-            className="animate-gamified-pop absolute left-4 top-[198px] z-30 w-[328px] sm:w-[372px] max-h-[390px] flex flex-col rounded-2xl border border-white/[0.12] bg-[#101413]/96 shadow-panel backdrop-blur-md overflow-hidden"
+            className="animate-gamified-pop absolute left-2 lg:left-4 top-[68px] lg:top-[198px] bottom-10 lg:bottom-auto z-30 w-[290px] sm:w-[340px] lg:w-[372px] lg:max-h-[390px] flex flex-col rounded-2xl border border-white/[0.12] bg-[#101413]/96 shadow-panel backdrop-blur-md overflow-hidden"
           >
-            <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
+            <div className="flex items-center justify-between border-b border-white/[0.08] px-3.5 py-2.5 lg:px-4 lg:py-3 shrink-0">
               <div>
                 <div className="text-xs font-bold text-ink-primary">
                   {activeDrawer === "missions" &&
@@ -945,43 +1075,26 @@ export default function WorldScreen() {
       </div>
 
       {/* RIGHT SIDEBAR: Resource Economy + Progression + Tile Inspector + Strategic Actions */}
-      <aside className="w-full landscape:w-[320px] lg:w-[392px] xl:w-[420px] shrink-0 border-t landscape:border-t-0 lg:border-t-0 landscape:border-l lg:border-l border-white/[0.08] bg-[#101413] flex flex-col overflow-y-auto">
-        <div className="p-4 sm:p-5 space-y-4 flex-1">
-          {/* Compact Region Switcher for small viewports */}
-          <div className="grid grid-cols-2 gap-1.5 md:hidden rounded-xl border border-white/[0.08] bg-obsidian p-1.5">
-            {REGIONS.map((reg) => {
-              const unlocked = Boolean(regionUnlockedMap[reg.id]);
-              return (
-                <button
-                  key={reg.id}
-                  type="button"
-                  onClick={() => handleSelectRegion(reg.id)}
-                  className={cn(
-                    "inline-flex items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold truncate",
-                    activeRegionId === reg.id
-                      ? "bg-crimson text-white"
-                      : "text-ink-secondary hover:text-white"
-                  )}
-                >
-                  {!unlocked && <Lock className="h-3 w-3 text-amber-400 shrink-0" />}
-                  <span className="truncate">{reg.name}</span>
-                </button>
-              );
-            })}
-          </div>
-
+      <aside
+        className={cn(
+          "w-full landscape:w-[272px] sm:landscape:w-[292px] lg:w-[392px] xl:w-[420px] shrink-0 border-t landscape:border-t-0 lg:border-t-0 landscape:border-l lg:border-l border-white/[0.08] bg-[#101413] flex-col overflow-y-auto",
+          mobileSidebarOpen ? "flex" : "hidden lg:flex"
+        )}
+      >
+        <div className="p-3 sm:p-4 lg:p-5 space-y-3 lg:space-y-4 flex-1">
           {/* In-Game Resource Economy Card (Wood, Stone, Food + Harvest CTA) */}
-          <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/92 backdrop-blur-md shadow-panel p-4 space-y-3">
+          <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/92 backdrop-blur-md shadow-panel p-3 lg:p-4 space-y-2.5 lg:space-y-3">
             {/* Header: Title, Total Stored & Harvest CTA */}
-            <div className="flex flex-col gap-2 border-b border-white/[0.06] pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-ink-primary">
-                    Settlement Materials
+            <div className="flex flex-col gap-1.5 lg:gap-2 border-b border-white/[0.06] pb-2.5 lg:pb-3">
+              <div className="flex items-center justify-between gap-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-[11px] lg:text-xs font-bold uppercase tracking-wider text-ink-primary whitespace-nowrap">
+                    <span className="lg:hidden">Materials</span>
+                    <span className="hidden lg:inline">Settlement Materials</span>
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 text-[9px] font-medium text-emerald-400">
+                  <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-1.5 py-0.5 text-[9px] font-medium text-emerald-400">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                    +25/h
+                    +{playerStats.woodPerHour + playerStats.stonePerHour + playerStats.foodPerHour}/h
                   </span>
                 </div>
 
@@ -990,7 +1103,7 @@ export default function WorldScreen() {
                   onClick={handleHarvestResources}
                   disabled={isHarvesting || playerStats.tilesClaimed === 0}
                   className={cn(
-                    "gamified-btn shrink-0 inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all shadow-sm",
+                    "gamified-btn shrink-0 inline-flex items-center gap-1 rounded-lg px-2 lg:px-2.5 py-1 text-[10px] lg:text-[11px] font-bold transition-all shadow-sm whitespace-nowrap",
                     playerStats.tilesClaimed === 0
                       ? "bg-white/[0.05] text-ink-muted cursor-not-allowed"
                       : playerStats.totalPendingHarvest > 0
@@ -999,19 +1112,19 @@ export default function WorldScreen() {
                   )}
                   title="Harvest all accrued field cultivation into your onchain settlement vault."
                 >
-                  <Sparkles className="h-3 w-3" />
+                  <Sparkles className="h-3 w-3 shrink-0" />
                   <span>
                     {isHarvesting
                       ? "Harvesting..."
                       : playerStats.totalPendingHarvest > 0
                       ? `Harvest (+${playerStats.totalPendingHarvest})`
-                      : "Harvest to Vault"}
+                      : "Harvest"}
                   </span>
                 </button>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-ink-muted">
-                <span>Vault Storage Capacity</span>
+              <div className="flex items-center justify-between text-[10px] lg:text-[11px] text-ink-muted">
+                <span>Vault Capacity</span>
                 <span className="font-mono text-ink-secondary font-bold">
                   {Math.floor(playerStats.wood + playerStats.stone + playerStats.food)} / {playerStats.storageCap} units
                 </span>
@@ -1019,56 +1132,56 @@ export default function WorldScreen() {
             </div>
 
             {/* 3 Prominent Resource Cards (Name & Rate on Top, Big Total in Center, Vault at Bottom) */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5 lg:gap-2">
               {/* Wood Card */}
-              <div className="flex flex-col items-center text-center rounded-xl border border-[#D99B52]/30 bg-[#D99B52]/10 p-2.5">
-                <div className="flex items-center gap-1 text-xs font-extrabold text-[#D99B52]">
-                  <Trees className="h-3.5 w-3.5 shrink-0" />
+              <div className="flex flex-col items-center text-center rounded-xl border border-[#D99B52]/30 bg-[#D99B52]/10 p-2 lg:p-2.5">
+                <div className="flex items-center gap-1 text-[11px] lg:text-xs font-extrabold text-[#D99B52]">
+                  <Trees className="h-3 w-3 lg:h-3.5 lg:w-3.5 shrink-0" />
                   <span>Wood</span>
                 </div>
-                <div className="font-mono text-xl font-extrabold text-ink-primary my-1">
+                <div className="font-mono text-base lg:text-xl font-extrabold text-ink-primary my-0.5 lg:my-1">
                   <AnimatedNumber value={Math.floor(playerStats.wood)} />
                 </div>
-                <div className="text-[9px] font-mono font-semibold text-[#D99B52] bg-[#D99B52]/20 px-2 py-0.5 rounded-full">
+                <div className="text-[9px] font-mono font-semibold text-[#D99B52] bg-[#D99B52]/20 px-1.5 lg:px-2 py-0.5 rounded-full">
                   +{playerStats.woodPerHour}/h
                 </div>
-                <div className="w-full mt-2 pt-1.5 border-t border-white/[0.08] flex items-center justify-between text-[9px] text-ink-muted">
+                <div className="w-full mt-1.5 lg:mt-2 pt-1 lg:pt-1.5 border-t border-white/[0.08] flex items-center justify-between text-[9px] text-ink-muted">
                   <span>Vault</span>
                   <span className="font-mono font-bold text-ink-secondary">{playerStats.storedWood}</span>
                 </div>
               </div>
 
               {/* Stone Card */}
-              <div className="flex flex-col items-center text-center rounded-xl border border-slate-400/30 bg-slate-400/10 p-2.5">
-                <div className="flex items-center gap-1 text-xs font-extrabold text-slate-300">
-                  <Mountain className="h-3.5 w-3.5 shrink-0" />
+              <div className="flex flex-col items-center text-center rounded-xl border border-slate-400/30 bg-slate-400/10 p-2 lg:p-2.5">
+                <div className="flex items-center gap-1 text-[11px] lg:text-xs font-extrabold text-slate-300">
+                  <Mountain className="h-3 w-3 lg:h-3.5 lg:w-3.5 shrink-0" />
                   <span>Stone</span>
                 </div>
-                <div className="font-mono text-xl font-extrabold text-ink-primary my-1">
+                <div className="font-mono text-base lg:text-xl font-extrabold text-ink-primary my-0.5 lg:my-1">
                   <AnimatedNumber value={Math.floor(playerStats.stone)} />
                 </div>
-                <div className="text-[9px] font-mono font-semibold text-slate-300 bg-slate-400/20 px-2 py-0.5 rounded-full">
+                <div className="text-[9px] font-mono font-semibold text-slate-300 bg-slate-400/20 px-1.5 lg:px-2 py-0.5 rounded-full">
                   +{playerStats.stonePerHour}/h
                 </div>
-                <div className="w-full mt-2 pt-1.5 border-t border-white/[0.08] flex items-center justify-between text-[9px] text-ink-muted">
+                <div className="w-full mt-1.5 lg:mt-2 pt-1 lg:pt-1.5 border-t border-white/[0.08] flex items-center justify-between text-[9px] text-ink-muted">
                   <span>Vault</span>
                   <span className="font-mono font-bold text-ink-secondary">{playerStats.storedStone}</span>
                 </div>
               </div>
 
               {/* Food Card */}
-              <div className="flex flex-col items-center text-center rounded-xl border border-amber-400/30 bg-amber-400/10 p-2.5">
-                <div className="flex items-center gap-1 text-xs font-extrabold text-amber-300">
-                  <Wheat className="h-3.5 w-3.5 shrink-0" />
+              <div className="flex flex-col items-center text-center rounded-xl border border-amber-400/30 bg-amber-400/10 p-2 lg:p-2.5">
+                <div className="flex items-center gap-1 text-[11px] lg:text-xs font-extrabold text-amber-300">
+                  <Wheat className="h-3 w-3 lg:h-3.5 lg:w-3.5 shrink-0" />
                   <span>Food</span>
                 </div>
-                <div className="font-mono text-xl font-extrabold text-ink-primary my-1">
+                <div className="font-mono text-base lg:text-xl font-extrabold text-ink-primary my-0.5 lg:my-1">
                   <AnimatedNumber value={Math.floor(playerStats.food)} />
                 </div>
-                <div className="text-[9px] font-mono font-semibold text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded-full">
+                <div className="text-[9px] font-mono font-semibold text-amber-300 bg-amber-400/20 px-1.5 lg:px-2 py-0.5 rounded-full">
                   +{playerStats.foodPerHour}/h
                 </div>
-                <div className="w-full mt-2 pt-1.5 border-t border-white/[0.08] flex items-center justify-between text-[9px] text-ink-muted">
+                <div className="w-full mt-1.5 lg:mt-2 pt-1 lg:pt-1.5 border-t border-white/[0.08] flex items-center justify-between text-[9px] text-ink-muted">
                   <span>Vault</span>
                   <span className="font-mono font-bold text-ink-secondary">{playerStats.storedFood}</span>
                 </div>
@@ -1076,7 +1189,7 @@ export default function WorldScreen() {
             </div>
 
             {/* Cultivation status footnote */}
-            <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.06] px-2.5 py-1.5 text-[10px] text-ink-muted">
+            <div className="hidden lg:flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.06] px-2.5 py-1.5 text-[10px] text-ink-muted">
               <span className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span>Cultivating active (+25 materials/hour)</span>

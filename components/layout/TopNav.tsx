@@ -300,19 +300,20 @@ export function TopNav() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 h-16 w-full border-b border-white/[0.07] bg-[#0B0D0C]/90 backdrop-blur-md">
-        <div className="mx-auto flex h-full max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="fixed top-0 left-0 right-0 z-50 h-14 sm:h-16 max-lg:landscape:h-12 w-full border-b border-white/[0.07] bg-[#0B0D0C]/92 backdrop-blur-md">
+        <div className="mx-auto flex h-full max-w-[1600px] items-center justify-between px-3 sm:px-6 lg:px-8 gap-2">
           {/* Left: Brand + Primary Navigation */}
-          <div className="flex items-center gap-8 lg:gap-12">
+          <div className="flex items-center gap-4 lg:gap-10 min-w-0">
             <Link
               href="/"
-              className="group flex items-center focus:outline-none"
+              className="group flex items-center shrink-0 focus:outline-none"
               aria-label="WIF WORLDS Home"
             >
-              <WifWorldsLogo size="md" />
+              <WifWorldsLogo size="sm" className="sm:hidden max-lg:landscape:inline-flex" />
+              <WifWorldsLogo size="md" className="hidden sm:inline-flex max-lg:landscape:hidden" />
             </Link>
 
-            <nav className="hidden md:flex items-center gap-1" aria-label="Main">
+            <nav className="hidden lg:flex items-center gap-1" aria-label="Main">
               {navItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
@@ -323,7 +324,7 @@ export function TopNav() {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "relative px-3.5 py-2 text-sm font-semibold transition-colors rounded-lg inline-flex items-center gap-1.5",
+                      "relative whitespace-nowrap px-3.5 py-2 text-sm font-semibold transition-colors rounded-lg inline-flex items-center gap-1.5",
                       isAdminTab
                         ? isActive
                           ? "bg-amber-400/15 text-amber-300 border border-amber-400/35"
@@ -345,24 +346,24 @@ export function TopNav() {
           </div>
 
           {/* Right: Network Validation + Notification Bell + Wallet Pill */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <NotificationCenter />
             {isConnected && isWrongNetwork && (
               <button
                 type="button"
                 onClick={switchToRobinhood}
                 disabled={isSwitchingChain}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-crimson/50 bg-crimson-muted/80 px-3 py-1.5 text-xs font-semibold text-crimson-accent hover:bg-crimson hover:text-white transition-all"
+                className="whitespace-nowrap inline-flex items-center gap-1.5 rounded-lg border border-crimson/50 bg-crimson-muted/80 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-crimson-accent hover:bg-crimson hover:text-white transition-all"
               >
-                <AlertTriangle className="h-3.5 w-3.5" />
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 <span>
-                  {isSwitchingChain ? "Switching..." : "Switch to Robinhood Chain"}
+                  {isSwitchingChain ? "Switching..." : "Switch Network"}
                 </span>
               </button>
             )}
 
             {isConnected && !isWrongNetwork && (
-              <div className="hidden lg:inline-flex items-center gap-2 rounded-lg border border-white/[0.07] bg-surface/90 px-3 py-1.5 text-xs text-ink-secondary">
+              <div className="hidden xl:inline-flex items-center gap-2 rounded-lg border border-white/[0.07] bg-surface/90 px-3 py-1.5 text-xs text-ink-secondary whitespace-nowrap">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
                 <span>Robinhood Chain</span>
                 <span className="text-white/20">|</span>
@@ -380,9 +381,9 @@ export function TopNav() {
                   setConnectError(null);
                   setConnectModalOpen(true);
                 }}
-                className="gamified-btn inline-flex items-center gap-2 rounded-lg bg-gradient-to-b from-crimson-accent to-crimson px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-crimson-sm hover:brightness-110 transition-all"
+                className="gamified-btn whitespace-nowrap inline-flex items-center gap-1.5 sm:gap-2 rounded-lg bg-gradient-to-b from-crimson-accent to-crimson px-3 sm:px-4 py-1.5 sm:py-2 max-lg:landscape:py-1.5 text-xs sm:text-sm max-lg:landscape:text-xs font-semibold text-white shadow-crimson-sm hover:brightness-110 transition-all"
               >
-                <WifWorldsGameIcon className="h-4 w-4" animated={false} />
+                <WifWorldsGameIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" animated={false} />
                 <span>Connect Wallet</span>
               </button>
             ) : (
@@ -390,9 +391,9 @@ export function TopNav() {
                 <button
                   type="button"
                   onClick={() => setMenuOpen((v) => !v)}
-                  className="gamified-btn inline-flex items-center gap-2.5 rounded-lg border border-white/[0.12] bg-[#161918] hover:border-crimson/40 hover:bg-[#1E2220] px-3 py-1.5 text-xs sm:text-sm font-medium text-ink-primary transition-all"
+                  className="gamified-btn whitespace-nowrap inline-flex items-center gap-2 rounded-lg border border-white/[0.12] bg-[#161918] hover:border-crimson/40 hover:bg-[#1E2220] px-2.5 sm:px-3 py-1.5 max-lg:landscape:py-1 text-xs sm:text-sm font-medium text-ink-primary transition-all"
                 >
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full border border-crimson/45 bg-[#1B0E11] p-1 shadow-[0_0_10px_rgba(230,57,70,0.35)]">
+                  <span className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border border-crimson/45 bg-[#1B0E11] p-1 shadow-[0_0_10px_rgba(230,57,70,0.35)]">
                     <WifWorldsGameIcon className="w-full h-full" animated={false} />
                   </span>
                   <span className="font-mono text-xs sm:text-[13px]">
@@ -499,7 +500,7 @@ export function TopNav() {
             <button
               type="button"
               onClick={() => setMobileNavOpen((v) => !v)}
-              className="md:hidden rounded-lg border border-white/[0.08] bg-surface p-2 text-ink-secondary hover:text-white"
+              className="lg:hidden rounded-lg border border-white/[0.08] bg-surface p-2 max-lg:landscape:p-1.5 text-ink-secondary hover:text-white"
               aria-label="Toggle Menu"
             >
               {mobileNavOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -507,9 +508,9 @@ export function TopNav() {
           </div>
         </div>
 
-        {/* Mobile navigation drawer */}
+        {/* Mobile & Landscape navigation drawer */}
         {mobileNavOpen && (
-          <div className="md:hidden border-b border-white/[0.08] bg-[#0E1110] px-4 py-3 space-y-1">
+          <div className="lg:hidden border-b border-white/[0.1] bg-[#0E1110]/98 backdrop-blur-xl px-4 py-3 grid grid-cols-2 sm:grid-cols-3 gap-1.5 shadow-2xl">
             {navItems.map((item) => {
               const isActive = pathname?.startsWith(item.href);
               return (
@@ -518,10 +519,10 @@ export function TopNav() {
                   href={item.href}
                   onClick={() => setMobileNavOpen(false)}
                   className={cn(
-                    "block rounded-lg px-3 py-2.5 text-sm font-semibold",
+                    "block rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-center sm:text-left transition-colors",
                     isActive
-                      ? "bg-crimson/15 text-crimson-accent"
-                      : "text-ink-secondary hover:bg-white/[0.04] hover:text-white"
+                      ? "bg-crimson/20 text-crimson-accent border border-crimson/35"
+                      : "bg-white/[0.03] text-ink-secondary hover:bg-white/[0.07] hover:text-white"
                   )}
                 >
                   {item.label}
@@ -534,9 +535,9 @@ export function TopNav() {
 
       {/* Wallet Connection Modal */}
       {connectModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
           <div
-            className="w-full max-w-md rounded-2xl border border-amber-200/20 bg-[#0F1413] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.95)]"
+            className="my-auto w-full max-w-md max-h-[92dvh] flex flex-col rounded-2xl border border-amber-200/20 bg-[#0F1413] p-4 sm:p-6 shadow-[0_28px_90px_rgba(0,0,0,0.95)] overflow-hidden"
             style={{ backgroundColor: "#0F1413" }}
           >
             <div className="flex items-start justify-between">

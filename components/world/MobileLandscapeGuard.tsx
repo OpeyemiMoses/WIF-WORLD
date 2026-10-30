@@ -12,6 +12,7 @@ import { WifWorldsLogo } from "@/components/brand/WifWorldsLogo";
  */
 export function MobileLandscapeGuard() {
   const [isMobilePortrait, setIsMobilePortrait] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -46,7 +47,7 @@ export function MobileLandscapeGuard() {
     };
   }, []);
 
-  if (!isMobilePortrait) return null;
+  if (!isMobilePortrait || dismissed) return null;
 
   return (
     <div
@@ -112,13 +113,23 @@ export function MobileLandscapeGuard() {
           </p>
         </div>
 
-        <Link
-          href="/"
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-2.5 text-xs font-semibold text-ink-secondary hover:text-white hover:bg-white/[0.08] transition-colors w-full"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          <span>Back to Landing Page (Portrait Supported)</span>
-        </Link>
+        <div className="flex flex-col gap-2 w-full">
+          <button
+            type="button"
+            onClick={() => setDismissed(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-crimson-accent to-crimson px-4 py-2.5 text-xs font-bold text-white shadow-crimson-sm hover:brightness-110 transition-all w-full"
+          >
+            <span>Continue in Portrait Mode</span>
+          </button>
+
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-2.5 text-xs font-semibold text-ink-secondary hover:text-white hover:bg-white/[0.08] transition-colors w-full"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Back to Landing Page</span>
+          </Link>
+        </div>
       </div>
     </div>
   );

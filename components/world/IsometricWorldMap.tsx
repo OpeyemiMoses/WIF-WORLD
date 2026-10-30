@@ -526,82 +526,82 @@ export function IsometricWorldMap({
       {/* Top-Right Compact Layer Toolbar (Matches Panel 2 Reference, Zero View Obstruction) */}
       <div
         data-hud-control
-        className="absolute right-4 top-4 z-20 flex flex-col gap-1.5"
+        className="absolute right-2 top-2 lg:right-4 lg:top-4 z-20 flex flex-col gap-1 lg:gap-1.5"
       >
         <button
           type="button"
           onClick={resetCamera}
           title="Reset Camera View"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.1] bg-[#121615]/88 text-ink-secondary hover:border-white/25 hover:text-white backdrop-blur-md transition-colors"
+          className="flex h-7 w-7 lg:h-9 lg:w-9 items-center justify-center rounded-lg border border-white/[0.1] bg-[#121615]/88 text-ink-secondary hover:border-white/25 hover:text-white backdrop-blur-md transition-colors"
         >
-          <Maximize2 className="h-4 w-4" />
+          <Maximize2 className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
         </button>
         <button
           type="button"
           onClick={() => setShowBorders((v) => !v)}
           title="Toggle Territory Borders"
           className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-md transition-colors",
+            "flex h-7 w-7 lg:h-9 lg:w-9 items-center justify-center rounded-lg border backdrop-blur-md transition-colors",
             showBorders
               ? "border-crimson/50 bg-crimson/20 text-crimson-accent"
               : "border-white/[0.1] bg-[#121615]/88 text-ink-secondary hover:text-white"
           )}
         >
-          <Shield className="h-4 w-4" />
+          <Shield className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
         </button>
         <button
           type="button"
           onClick={() => setShowStructures((v) => !v)}
           title="Toggle Settlements & Structures"
           className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-md transition-colors",
+            "flex h-7 w-7 lg:h-9 lg:w-9 items-center justify-center rounded-lg border backdrop-blur-md transition-colors",
             showStructures
               ? "border-crimson/50 bg-crimson/20 text-crimson-accent"
               : "border-white/[0.1] bg-[#121615]/88 text-ink-secondary hover:text-white"
           )}
         >
-          <Layers className="h-4 w-4" />
+          <Layers className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
         </button>
         <button
           type="button"
           onClick={() => setShowCoords((v) => !v)}
           title="Toggle Tile Coordinates"
           className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-md transition-colors",
+            "flex h-7 w-7 lg:h-9 lg:w-9 items-center justify-center rounded-lg border backdrop-blur-md transition-colors",
             showCoords
               ? "border-crimson/50 bg-crimson/20 text-crimson-accent"
               : "border-white/[0.1] bg-[#121615]/88 text-ink-secondary hover:text-white"
           )}
         >
-          <Grid className="h-4 w-4" />
+          <Grid className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
         </button>
       </div>
 
       {/* Bottom-Right Zoom + Isometric Territory Mini-Map (Matches Panel 2 Reference) */}
       <div
         data-hud-control
-        className="absolute bottom-4 right-4 z-20 flex items-end gap-2.5"
+        className="absolute bottom-2 right-2 lg:bottom-4 lg:right-4 z-20 flex items-end gap-2"
       >
         <div className="flex flex-col overflow-hidden rounded-lg border border-white/[0.1] bg-[#121615]/90 backdrop-blur-md">
           <button
             type="button"
             onClick={() => zoomBy(-3.2)}
-            className="flex h-8 w-8 items-center justify-center text-ink-secondary hover:bg-white/[0.08] hover:text-white border-b border-white/[0.08]"
+            className="flex h-7 w-7 lg:h-8 lg:w-8 items-center justify-center text-ink-secondary hover:bg-white/[0.08] hover:text-white border-b border-white/[0.08]"
             aria-label="Zoom in"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
           </button>
           <button
             type="button"
             onClick={() => zoomBy(3.2)}
-            className="flex h-8 w-8 items-center justify-center text-ink-secondary hover:bg-white/[0.08] hover:text-white"
+            className="flex h-7 w-7 lg:h-8 lg:w-8 items-center justify-center text-ink-secondary hover:bg-white/[0.08] hover:text-white"
             aria-label="Zoom out"
           >
-            <Minus className="h-4 w-4" />
+            <Minus className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
           </button>
         </div>
 
-        <div className="hidden sm:block rounded-xl border border-white/[0.1] bg-[#101413]/92 p-2 shadow-panel backdrop-blur-md">
+        <div className="hidden xl:block rounded-xl border border-white/[0.1] bg-[#101413]/92 p-2 shadow-panel backdrop-blur-md">
           <TerritoryMiniMap
             tiles={tiles}
             selectedTileId={selectedTileId}
@@ -616,7 +616,7 @@ export function IsometricWorldMap({
       {isRegionLocked && (
         <div
           data-hud-control
-          className="pointer-events-none absolute bottom-16 left-4 z-20 rounded-xl border border-amber-400/35 bg-[#1B150E]/92 px-3.5 py-2 text-xs text-amber-200 backdrop-blur-md shadow-panel"
+          className="pointer-events-none absolute bottom-11 lg:bottom-16 left-2 lg:left-4 right-12 lg:right-auto z-20 rounded-xl border border-amber-400/35 bg-[#1B150E]/92 px-2.5 py-1.5 lg:px-3.5 lg:py-2 text-[10px] lg:text-xs text-amber-200 backdrop-blur-md shadow-panel"
         >
           <span className="font-bold text-amber-300">
             {regionName || "Frontier Region"} (Scout Mode):
@@ -630,27 +630,27 @@ export function IsometricWorldMap({
       {/* Bottom-Left World Legend Pill (Matches Panel 2 Reference) */}
       <div
         data-hud-control
-        className="absolute bottom-4 left-4 z-20 rounded-xl border border-white/[0.09] bg-[#101413]/90 px-3.5 py-2.5 backdrop-blur-md shadow-panel"
+        className="absolute bottom-2 left-2 lg:bottom-4 lg:left-4 z-20 rounded-xl border border-white/[0.09] bg-[#101413]/90 px-2.5 py-1.5 lg:px-3.5 lg:py-2.5 backdrop-blur-md shadow-panel"
       >
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] font-medium text-ink-secondary">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#2DD4BF] shadow-[0_0_6px_#2DD4BF]" />
+        <div className="flex flex-wrap items-center gap-x-2.5 lg:gap-x-4 gap-y-1 text-[10px] lg:text-[11px] font-medium text-ink-secondary">
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 lg:h-2.5 lg:w-2.5 rounded-full bg-[#2DD4BF] shadow-[0_0_6px_#2DD4BF]" />
             You
           </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-crimson-accent shadow-[0_0_6px_#FF4D5A]" />
-            Other Players
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 lg:h-2.5 lg:w-2.5 rounded-full bg-crimson-accent shadow-[0_0_6px_#FF4D5A]" />
+            Others
           </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#68736D]" />
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 lg:h-2.5 lg:w-2.5 rounded-full bg-[#68736D]" />
             Neutral
           </span>
-          <span className="hidden sm:inline-flex items-center gap-1.5">
+          <span className="hidden lg:inline-flex items-center gap-1.5">
             <Compass className="h-3 w-3 text-gold" />
             Structures
           </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rotate-45 bg-crimson border border-amber-300" />
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 lg:h-2.5 lg:w-2.5 rotate-45 bg-crimson border border-amber-300" />
             Event
           </span>
         </div>
