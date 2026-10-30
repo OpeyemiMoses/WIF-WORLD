@@ -591,14 +591,17 @@ export default function WorldScreen() {
           </div>
 
           {/* Live In-Game Resource Ticker Pill (Wood, Stone, Food + Harvest CTA) */}
-          <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-white/[0.1] bg-[#101413]/92 px-3.5 py-1.5 text-xs backdrop-blur-md shadow-panel">
+          <div
+            className="pointer-events-auto flex items-center gap-3 rounded-xl border border-white/[0.1] bg-[#101413]/92 px-3.5 py-1.5 text-xs backdrop-blur-md shadow-panel"
+            title={`Active Cultivation: +${playerStats.pendingWood} Wood, +${playerStats.pendingStone} Stone, +${playerStats.pendingFood} Food. Vault Storage: ${playerStats.storedWood} Wood, ${playerStats.storedStone} Stone, ${playerStats.storedFood} Food (Cap ${playerStats.storageCap})`}
+          >
             <div
               className="flex items-center gap-1.5"
-              title="Wood — Construction Material (Produced by Lumber Camps)"
+              title={`Wood Cultivating: +${playerStats.pendingWood} ready. (+${playerStats.woodPerHour}/h). Vault: ${playerStats.storedWood}`}
             >
               <Trees className="h-3.5 w-3.5 text-[#D99B52]" />
               <span className="font-mono font-bold text-ink-primary">
-                <AnimatedNumber value={Math.floor(playerStats.wood)} />
+                <AnimatedNumber value={playerStats.pendingWood} />
               </span>
               <span className="font-mono text-[10px] text-[#D99B52]">
                 +{playerStats.woodPerHour}/h
@@ -609,11 +612,11 @@ export default function WorldScreen() {
 
             <div
               className="flex items-center gap-1.5"
-              title="Stone — Advanced Buildings (Produced by Quarries)"
+              title={`Stone Cultivating: +${playerStats.pendingStone} ready. (+${playerStats.stonePerHour}/h). Vault: ${playerStats.storedStone}`}
             >
               <Mountain className="h-3.5 w-3.5 text-slate-300" />
               <span className="font-mono font-bold text-ink-primary">
-                <AnimatedNumber value={Math.floor(playerStats.stone)} />
+                <AnimatedNumber value={playerStats.pendingStone} />
               </span>
               <span className="font-mono text-[10px] text-slate-300">
                 +{playerStats.stonePerHour}/h
@@ -624,11 +627,11 @@ export default function WorldScreen() {
 
             <div
               className="flex items-center gap-1.5"
-              title="Food — Settlement Development (Produced by Farms)"
+              title={`Food Cultivating: +${playerStats.pendingFood} ready. (+${playerStats.foodPerHour}/h). Vault: ${playerStats.storedFood}`}
             >
               <Wheat className="h-3.5 w-3.5 text-amber-400" />
               <span className="font-mono font-bold text-ink-primary">
-                <AnimatedNumber value={Math.floor(playerStats.food)} />
+                <AnimatedNumber value={playerStats.pendingFood} />
               </span>
               <span className="font-mono text-[10px] text-amber-400">
                 +{playerStats.foodPerHour}/h
@@ -651,7 +654,7 @@ export default function WorldScreen() {
               )}
               title={
                 playerStats.totalPendingHarvest > 0
-                  ? `Harvest ${playerStats.totalPendingHarvest} resources (+${playerStats.pendingWood} Wood, +${playerStats.pendingStone} Stone, +${playerStats.pendingFood} Food) into your warehouse. Cultivation plot will reset to 0 and begin growing next batch.`
+                  ? `Harvest ${playerStats.totalPendingHarvest} resources (+${playerStats.pendingWood} Wood, +${playerStats.pendingStone} Stone, +${playerStats.pendingFood} Food) into your vault. Cultivation plot resets to 0 and begins growing next batch.`
                   : `Currently cultivating (+${playerStats.woodPerHour + playerStats.stonePerHour + playerStats.foodPerHour}/h: +10 Wood, +5 Stone, +10 Food). Matured units will be harvestable into your warehouse.`
               }
             >
@@ -971,29 +974,36 @@ export default function WorldScreen() {
           </div>
 
           {/* In-Game Resource Economy Card (Wood, Stone, Food + Harvest CTA) */}
-          <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/92 backdrop-blur-md shadow-panel p-4 space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/92 backdrop-blur-md shadow-panel p-4 space-y-3.5">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-secondary">
-                  Settlement Materials
-                </span>
-                <span className="ml-2 font-mono text-[10px] text-ink-muted">
-                  Warehouse Cap {playerStats.storageCap}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-primary">
+                    Settlement Materials
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 text-[9px] font-medium text-emerald-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    Cultivating
+                  </span>
+                </div>
+                <div className="text-[10px] text-ink-muted mt-0.5">
+                  Vault Storage Cap: <span className="font-mono text-ink-secondary font-semibold">{playerStats.storageCap} units</span>
+                </div>
               </div>
+
               <button
                 type="button"
                 onClick={handleHarvestResources}
                 disabled={isHarvesting || playerStats.tilesClaimed === 0}
                 className={cn(
-                  "gamified-btn inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all",
+                  "gamified-btn shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all shadow-sm",
                   playerStats.tilesClaimed === 0
                     ? "bg-white/[0.05] text-ink-muted cursor-not-allowed"
                     : playerStats.totalPendingHarvest > 0
                     ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/35 shadow-[0_0_12px_rgba(16,185,129,0.25)] animate-pulse"
                     : "bg-emerald-500/10 text-emerald-400/90 border border-emerald-500/20 hover:bg-emerald-500/20"
                 )}
-                title="Collect all matured cultivation crops into your settlement warehouse. Cultivation plot resets to 0 and grows the next batch."
+                title="Collect all matured cultivation crops into your settlement vault. Field plots reset to 0 and grow the next batch."
               >
                 <Sparkles className="h-3 w-3" />
                 <span>
@@ -1001,60 +1011,84 @@ export default function WorldScreen() {
                     ? "Harvesting..."
                     : playerStats.totalPendingHarvest > 0
                     ? `Harvest (+${playerStats.totalPendingHarvest})`
-                    : "Harvest Now"}
+                    : "Harvest Field"}
                 </span>
               </button>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-xl border border-[#D99B52]/25 bg-[#D99B52]/10 p-2.5">
-                <div className="flex items-center justify-between text-[10px] font-semibold text-[#D99B52]">
-                  <span className="flex items-center gap-1">
-                    <Trees className="h-3 w-3" />
+              {/* Wood Column */}
+              <div className="flex flex-col justify-between rounded-xl border border-[#D99B52]/25 bg-[#D99B52]/10 p-2.5 min-w-0">
+                <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-[#D99B52]">
+                  <span className="flex items-center gap-1 truncate">
+                    <Trees className="h-3 w-3 shrink-0" />
                     Wood
                   </span>
-                  <span className="font-mono">+{playerStats.woodPerHour}/h</span>
+                  <span className="font-mono text-[9px] bg-[#D99B52]/20 px-1 py-0.5 rounded shrink-0">
+                    +{playerStats.woodPerHour}/h
+                  </span>
                 </div>
-                <div className="font-mono text-base font-extrabold text-ink-primary mt-0.5">
-                  <AnimatedNumber value={Math.floor(playerStats.wood)} />
+                <div className="my-1.5">
+                  <div className="text-[9px] uppercase tracking-wider text-ink-muted font-medium">
+                    Plot Ready
+                  </div>
+                  <div className="font-mono text-base font-extrabold text-ink-primary">
+                    <AnimatedNumber value={playerStats.pendingWood} />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-[9px] text-ink-muted mt-1 pt-1 border-t border-white/[0.06]">
-                  <span>Warehouse: {Math.floor(playerStats.storedWood)}</span>
-                  <span className="text-[#D99B52] font-semibold">+{playerStats.pendingWood} field</span>
+                <div className="pt-1 border-t border-white/[0.06] text-[9px] text-ink-muted flex items-center justify-between">
+                  <span>Vault:</span>
+                  <span className="font-mono font-semibold text-ink-primary">{playerStats.storedWood}</span>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-400/25 bg-slate-400/10 p-2.5">
-                <div className="flex items-center justify-between text-[10px] font-semibold text-slate-300">
-                  <span className="flex items-center gap-1">
-                    <Mountain className="h-3 w-3" />
+              {/* Stone Column */}
+              <div className="flex flex-col justify-between rounded-xl border border-slate-400/25 bg-slate-400/10 p-2.5 min-w-0">
+                <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-slate-300">
+                  <span className="flex items-center gap-1 truncate">
+                    <Mountain className="h-3 w-3 shrink-0" />
                     Stone
                   </span>
-                  <span className="font-mono">+{playerStats.stonePerHour}/h</span>
+                  <span className="font-mono text-[9px] bg-slate-400/20 px-1 py-0.5 rounded shrink-0">
+                    +{playerStats.stonePerHour}/h
+                  </span>
                 </div>
-                <div className="font-mono text-base font-extrabold text-ink-primary mt-0.5">
-                  <AnimatedNumber value={Math.floor(playerStats.stone)} />
+                <div className="my-1.5">
+                  <div className="text-[9px] uppercase tracking-wider text-ink-muted font-medium">
+                    Plot Ready
+                  </div>
+                  <div className="font-mono text-base font-extrabold text-ink-primary">
+                    <AnimatedNumber value={playerStats.pendingStone} />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-[9px] text-ink-muted mt-1 pt-1 border-t border-white/[0.06]">
-                  <span>Warehouse: {Math.floor(playerStats.storedStone)}</span>
-                  <span className="text-slate-300 font-semibold">+{playerStats.pendingStone} field</span>
+                <div className="pt-1 border-t border-white/[0.06] text-[9px] text-ink-muted flex items-center justify-between">
+                  <span>Vault:</span>
+                  <span className="font-mono font-semibold text-ink-primary">{playerStats.storedStone}</span>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-2.5">
-                <div className="flex items-center justify-between text-[10px] font-semibold text-amber-300">
-                  <span className="flex items-center gap-1">
-                    <Wheat className="h-3 w-3" />
+              {/* Food Column */}
+              <div className="flex flex-col justify-between rounded-xl border border-amber-400/25 bg-amber-400/10 p-2.5 min-w-0">
+                <div className="flex items-center justify-between gap-1 text-[10px] font-bold text-amber-300">
+                  <span className="flex items-center gap-1 truncate">
+                    <Wheat className="h-3 w-3 shrink-0" />
                     Food
                   </span>
-                  <span className="font-mono">+{playerStats.foodPerHour}/h</span>
+                  <span className="font-mono text-[9px] bg-amber-400/20 px-1 py-0.5 rounded shrink-0">
+                    +{playerStats.foodPerHour}/h
+                  </span>
                 </div>
-                <div className="font-mono text-base font-extrabold text-ink-primary mt-0.5">
-                  <AnimatedNumber value={Math.floor(playerStats.food)} />
+                <div className="my-1.5">
+                  <div className="text-[9px] uppercase tracking-wider text-ink-muted font-medium">
+                    Plot Ready
+                  </div>
+                  <div className="font-mono text-base font-extrabold text-ink-primary">
+                    <AnimatedNumber value={playerStats.pendingFood} />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-[9px] text-ink-muted mt-1 pt-1 border-t border-white/[0.06]">
-                  <span>Warehouse: {Math.floor(playerStats.storedFood)}</span>
-                  <span className="text-amber-300 font-semibold">+{playerStats.pendingFood} field</span>
+                <div className="pt-1 border-t border-white/[0.06] text-[9px] text-ink-muted flex items-center justify-between">
+                  <span>Vault:</span>
+                  <span className="font-mono font-semibold text-ink-primary">{playerStats.storedFood}</span>
                 </div>
               </div>
             </div>
@@ -1063,11 +1097,11 @@ export default function WorldScreen() {
             <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.06] px-2.5 py-1.5 text-[10px] text-ink-muted">
               <span className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Cultivation active (+25 materials/hour)</span>
+                <span>Cultivating active (+25 units/hour)</span>
               </span>
               <span className="text-ink-secondary">
                 {playerStats.totalPendingHarvest > 0
-                  ? `${playerStats.totalPendingHarvest} ready to collect`
+                  ? `${playerStats.totalPendingHarvest} ready to bank`
                   : "Plots growing from 0"}
               </span>
             </div>

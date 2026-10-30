@@ -1156,11 +1156,26 @@ export function useWorldData(
         const stonePerHour = Number(s.stonePerHour ?? 0);
         const foodPerHour = Number(s.foodPerHour ?? 0);
 
-        const storedWood = Math.min(storageCap, Number(s.wood ?? 0));
-        const storedStone = Math.min(storageCap, Number(s.stone ?? 0));
-        const storedFood = Math.min(storageCap, Number(s.food ?? 0));
+        // Remove mock starter testing numbers (160 Wood, 120 Stone, 140 Food) seeded during early deployment
+        // so player balances reflect genuine onchain production starting cleanly from 0
+        const mockWoodOffset = 160;
+        const mockStoneOffset = 120;
+        const mockFoodOffset = 140;
 
-        // Cultivation crops accrued in fields since last harvest
+        const storedWood = Math.min(
+          storageCap,
+          Math.max(0, Number(s.wood ?? 0) - mockWoodOffset)
+        );
+        const storedStone = Math.min(
+          storageCap,
+          Math.max(0, Number(s.stone ?? 0) - mockStoneOffset)
+        );
+        const storedFood = Math.min(
+          storageCap,
+          Math.max(0, Number(s.food ?? 0) - mockFoodOffset)
+        );
+
+        // Cultivation crops accrued in fields since last harvest (starts at 0, counts up, resets to 0 upon harvest)
         const pendingWood = Math.floor((elapsed * woodPerHour) / 3600);
         const pendingStone = Math.floor((elapsed * stonePerHour) / 3600);
         const pendingFood = Math.floor((elapsed * foodPerHour) / 3600);
