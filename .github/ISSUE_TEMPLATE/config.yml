@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Robinhood Chain Blockscout Explorer (WIFWorlds Contract)
+    url: https://robinhoodchain.blockscout.com/address/0xaA2dd131f596249755cCcdcC48447C1434Ac109B
+    about: Inspect live onchain transactions, events, and contract state on Robinhood Chain (4663).
+  - name: Security Vulnerability Report
+    url: https://github.com/OpeyemiMoses/WIF-WORLD/security/advisories/new
+    about: Please report security vulnerabilities privately rather than in public issues.
