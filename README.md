@@ -1,34 +1,47 @@
 # WIF WORLDS: The Living Map
 
-[![Network: Robinhood Chain 4663](https://img.shields.io/badge/Network-Robinhood_Chain_(4663)-00C805?style=for-the-badge)](https://robinhoodchain.blockscout.com/address/0xaA2dd131f596249755cCcdcC48447C1434Ac109B)
-[![Token: $WIF](https://img.shields.io/badge/Core_Token-$WIF-E11D48?style=for-the-badge)](https://robinhoodchain.blockscout.com/token/0x5173b8eA6923c2d40267890D45C46a3480954773)
-[![License: MIT](https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge)](./LICENSE)
-[![Built With: Next.js 14 & Foundry](https://img.shields.io/badge/Stack-Next.js_14_%7C_Three.js_%7C_Foundry-2DD4BF?style=for-the-badge)](./contracts/src/WIFWorlds.sol)
-
 > **A persistent, multiplayer onchain strategy and civilization-building game deployed on Robinhood Chain (`Chain ID 4663`) and powered by the official `$WIF` token (`0x5173b8eA6923c2d40267890D45C46a3480954773`).**
 
 In **WIF WORLDS**, every land claim, settlement foundation, hall upgrade, resource production structure, harvest cycle, and community world event is verifiable onchain. Players explore a 360° interactive WebGL2 3D isometric archipelago spanning **4 regions (196 tiles)**, cultivate in-game materials (`Wood`, `Stone`, `Food`), and collaborate on sequential **$WIF World Events** that permanently unlock new territories for the entire realm.
 
 ---
 
-## Table of Contents
+## Live Production Deployments
 
-1. [For Hackathon Judges: Step-by-Step Evaluation Guide](#-for-hackathon-judges-step-by-step-evaluation-guide)
-2. [Live Onchain Deployment & Verified Transactions](#-live-onchain-deployment--verified-transactions)
-3. [System Architecture](#-system-architecture)
-4. [Core Gameplay Mechanics & Onchain Economy](#-core-gameplay-mechanics--onchain-economy)
-5. [Smart Contract Specification (`WIFWorlds.sol`)](#-smart-contract-specification-wifworldssol)
-6. [Local Development & Testing](#-local-development--testing)
-7. [Community Standards, Security & License](#-community-standards-security--license)
+| Service | Live URL | Description |
+|---|---|---|
+| **Vercel Production** | [https://wif-world.vercel.app](https://wif-world.vercel.app) | Primary global edge production deployment |
+| **Railway Production** | [https://wif-world-production.up.railway.app](https://wif-world-production.up.railway.app) | High-availability containerized production deployment |
+| **Robinhood Chain Explorer** | [https://robinhoodchain.blockscout.com/address/0xaA2dd131f596249755cCcdcC48447C1434Ac109B](https://robinhoodchain.blockscout.com/address/0xaA2dd131f596249755cCcdcC48447C1434Ac109B) | Live onchain `WIFWorlds` smart contract |
+| **Official $WIF Token** | [https://robinhoodchain.blockscout.com/token/0x5173b8eA6923c2d40267890D45C46a3480954773](https://robinhoodchain.blockscout.com/token/0x5173b8eA6923c2d40267890D45C46a3480954773) | Hackathon ERC-20 token on Robinhood Chain |
 
 ---
 
-## 🏆 For Hackathon Judges: Step-by-Step Evaluation Guide
+## Table of Contents
+
+1. [Live Production Deployments](#live-production-deployments)
+2. [For Hackathon Judges: Step-by-Step Evaluation Guide](#for-hackathon-judges-step-by-step-evaluation-guide)
+3. [Live Onchain Deployment & Verified Transactions](#live-onchain-deployment--verified-transactions)
+4. [System Architecture](#system-architecture)
+5. [Core Gameplay Mechanics & Onchain Economy](#core-gameplay-mechanics--onchain-economy)
+6. [Smart Contract Specification (WIFWorlds.sol)](#smart-contract-specification-wifworldssol)
+7. [Local Development & Testing](#local-development--testing)
+8. [Community Standards, Security & License](#community-standards-security--license)
+
+---
+
+## For Hackathon Judges: Step-by-Step Evaluation Guide
 
 We designed **WIF WORLDS** so judges can immediately inspect, verify, and test every system—both **read-only (without spending `$WIF`)** and **live onchain (with a connected EVM wallet on Robinhood Chain)**.
 
+Live test instances are available at:
+- **Vercel:** [https://wif-world.vercel.app](https://wif-world.vercel.app)
+- **Railway:** [https://wif-world-production.up.railway.app](https://wif-world-production.up.railway.app)
+
 ### 1. Instant Read-Only Inspection (Zero Wallet Setup Required)
+
 Even before connecting a wallet, the application streams live state directly from the `WIFWorlds` smart contract (`0xaA2dd131f596249755cCcdcC48447C1434Ac109B`) on Robinhood Chain:
+
 - **Explore the 3D Living Map (`/world`):**
   - **Orbit & Pan:** Drag to pan across the island; hold `Shift + Drag` or `Right-Click + Drag` to orbit 360° around the archipelago; scroll or pinch to zoom.
   - **Double-Click Fly-To-Tile:** Double-click any tile on the 3D island to smoothly fly the camera directly to that territory and inspect its terrain, coordinates, owner, and structures.
@@ -40,11 +53,13 @@ Even before connecting a wallet, the application streams live state directly fro
   - View the live event log indexer that queries `TileClaimed`, `SettlementBuilt`, `SettlementUpgraded`, `StructureBuilt`, `ResourcesHarvested`, `EventContribution`, and `RegionUnlocked` logs directly from Robinhood Chain RPC with direct **Blockscout transaction links**.
 
 ### 2. Connecting a Wallet (Multi-Wallet EIP-6963 Auto-Discovery)
+
 1. Click **Connect Wallet** in the top navigation bar.
 2. Our **EIP-6963 Multi-Wallet Discovery Modal** automatically detects all installed EVM browser wallets (MetaMask, Rabby, Coinbase Wallet, OKX Wallet, Brave, Rainbow, Phantom, Trust Wallet) along with their native browser icons.
 3. If your wallet is on another network, click the **Switch to Robinhood Chain (`4663`)** prompt—the app automatically configures the Robinhood Chain RPC (`https://rpc.mainnet.chain.robinhood.com`) and Blockscout explorer in your wallet.
 
 ### 3. Guided 7-Step Pioneer Onboarding Tutorial
+
 - Click the **Tutorial** button in the top region bar on `/world` (or connect a fresh wallet) to launch the interactive **7-Step Pioneer Onboarding Modal**:
   1. *Welcome to the Archipelago*
   2. *EVM Wallet & Robinhood Chain Verification*
@@ -55,7 +70,9 @@ Even before connecting a wallet, the application streams live state directly fro
   7. *Completing Onchain Pioneer Missions*
 
 ### 4. Testing Live Onchain Gameplay Actions (With `$WIF` on Robinhood Chain)
+
 If evaluating with a wallet funded with small amounts of ETH (for gas on Robinhood Chain) and `$WIF`:
+
 1. **Claim a Neutral Tile (`6.25 $WIF`):**
    - Select any unclaimed non-water, non-landmark tile in *The Heartlands* and click **Claim Territory**.
    - First-time players automatically receive base hourly cultivation rates (`+10 Wood/h`, `+5 Stone/h`, `+10 Food/h`), and **100% of the `$WIF` spent automatically advances the active World Event onchain**.
@@ -68,13 +85,14 @@ If evaluating with a wallet funded with small amounts of ETH (for gas on Robinho
    - Contribute `$WIF` directly to the active World Event. When `currentAmount >= targetAmount`, the smart contract automatically marks the event completed, unlocks the target region onchain (`isRegionUnlocked[regionId] = true`), and activates the next World Event in sequence (`1 -> 2 -> 3 -> 4 -> 5`).
 
 ### 5. Evaluating Security & Private Treasury Administration (`/admin`)
+
 - The **Admin Dashboard (`/admin`)** is strictly private to the designated Treasury & Administrator wallet (`0x479253b82Eb63eb36F140EcABf0237cc338084e7`).
 - **For Ordinary Wallets / Unconnected Visitors:** The `Admin` navigation link is completely hidden, and navigating directly to `/admin` enforces an access-denied guard with zero leakage of administrative controls.
 - **Cryptographic Session Security:** Server-side admin APIs (`/api/admin/auth`, `/api/admin/audit`) enforce **nonce-bound EIP-191 wallet signature verification** (`viem.verifyMessage`) bound to an `HttpOnly` session cookie, plus smart-contract-level `onlyAdmin` modifiers.
 
 ---
 
-## ⛓️ Live Onchain Deployment & Verified Transactions
+## Live Onchain Deployment & Verified Transactions
 
 All smart contracts and economy parameters are live on **Robinhood Chain Mainnet (`4663`)**:
 
@@ -98,7 +116,7 @@ All smart contracts and economy parameters are live on **Robinhood Chain Mainnet
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```mermaid
 flowchart TB
@@ -171,7 +189,7 @@ wif-worlds/
 
 ---
 
-## 🎮 Core Gameplay Mechanics & Onchain Economy
+## Core Gameplay Mechanics & Onchain Economy
 
 ### 1. Three-Tier Spatial Hierarchy (4 Regions • 196 Onchain Tiles)
 - **Region 0 — The Heartlands (Tiles `0–48`):** Unlocked at genesis. Lush plains, forests, and river crossings around the Ancient Obelisk.
@@ -205,7 +223,7 @@ Every claimed tile can host one specialized structure:
 
 ---
 
-## 📜 Smart Contract Specification (`WIFWorlds.sol`)
+## Smart Contract Specification (WIFWorlds.sol)
 
 Located at [`contracts/src/WIFWorlds.sol`](./contracts/src/WIFWorlds.sol), compiled with Solidity `0.8.24`:
 
@@ -223,7 +241,7 @@ Located at [`contracts/src/WIFWorlds.sol`](./contracts/src/WIFWorlds.sol), compi
 
 ---
 
-## 💻 Local Development & Testing
+## Local Development & Testing
 
 ### Prerequisites
 - **Node.js** `>= 18.x` and **npm**
@@ -262,14 +280,14 @@ npm run build
 
 ---
 
-## 🤝 Community Standards, Security & License
+## Community Standards, Security & License
 
 We maintain full GitHub Community Standards for open-source transparency and security:
 
-- 📖 **[Contributing Guidelines (`CONTRIBUTING.md`)](./CONTRIBUTING.md)** — How to propose features, run checks, and submit pull requests.
-- 📜 **[Code of Conduct (`CODE_OF_CONDUCT.md`)](./CODE_OF_CONDUCT.md)** — Contributor Covenant v2.1 standards for our community.
-- 🛡️ **[Security Policy (`SECURITY.md`)](./SECURITY.md)** — Smart contract safety guarantees, admin authentication architecture, and vulnerability reporting.
-- ⚖️ **[MIT License (`LICENSE`)](./LICENSE)** — Open-source licensing terms.
+- **[Contributing Guidelines (CONTRIBUTING.md)](./CONTRIBUTING.md)** — How to propose features, run checks, and submit pull requests.
+- **[Code of Conduct (CODE_OF_CONDUCT.md)](./CODE_OF_CONDUCT.md)** — Contributor Covenant v2.1 standards for our community.
+- **[Security Policy (SECURITY.md)](./SECURITY.md)** — Smart contract safety guarantees, admin authentication architecture, and vulnerability reporting.
+- **[MIT License (LICENSE)](./LICENSE)** — Open-source licensing terms.
 
 ---
 

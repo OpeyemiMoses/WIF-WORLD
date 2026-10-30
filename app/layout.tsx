@@ -19,6 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://wif-world.vercel.app"),
   title: "WIF WORLDS — The Living Map",
   description:
     "A persistent shared onchain strategy world powered by $WIF on Robinhood Chain. Claim territory, build settlements, and shape the living map.",

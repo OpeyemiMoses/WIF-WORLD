@@ -3,13 +3,17 @@
 **Project Title:** WIF WORLDS: The Living Map  
 **Tagline:** A Persistent Multiplayer Onchain Civilization & Resource Economy Built on Robinhood Chain (`4663`) Powered by `$WIF`  
 **GitHub Repository:** [https://github.com/OpeyemiMoses/WIF-WORLD](https://github.com/OpeyemiMoses/WIF-WORLD)  
+**Live Production URL (Vercel):** [https://wif-world.vercel.app](https://wif-world.vercel.app)  
+**Live Production URL (Railway):** [https://wif-world-production.up.railway.app](https://wif-world-production.up.railway.app)  
 
 ---
 
-## 1. Live Onchain Deployment & Verification Details
+## 1. Live Production & Onchain Deployment Details
 
 | Parameter | Value | Explorer / Link |
 |---|---|---|
+| **Vercel Production Deployment** | Primary Edge Host | [https://wif-world.vercel.app](https://wif-world.vercel.app) |
+| **Railway Production Deployment** | Containerized Host | [https://wif-world-production.up.railway.app](https://wif-world-production.up.railway.app) |
 | **Network** | Robinhood Chain Mainnet | Chain ID `4663` (`0x1237`) |
 | **RPC Endpoint** | `https://rpc.mainnet.chain.robinhood.com` | Live JSON-RPC |
 | **Block Explorer** | Blockscout | [https://robinhoodchain.blockscout.com](https://robinhoodchain.blockscout.com) |
@@ -43,7 +47,7 @@
 Because Blockscout's API sits behind Cloudflare browser challenge protection, we generated a ready-to-upload flattened contract file at [`contracts/WIFWorlds.flattened.sol`](./contracts/WIFWorlds.flattened.sol).
 
 To verify in 30 seconds in your browser:
-1. Open [https://robinhoodchain.blockscout.com/address/0xaA2dd131f596249755cCcdcC48447C1434Ac109B?tab=contract](https://robinhoodchain.blockscout.com/address/0xaA2dd131f596249755cCcdcc48447C1434Ac109B?tab=contract) and click **Verify & Publish**.
+1. Open [https://robinhoodchain.blockscout.com/address/0xaA2dd131f596249755cCcdcC48447C1434Ac109B?tab=contract](https://robinhoodchain.blockscout.com/address/0xaA2dd131f596249755cCcdcC48447C1434Ac109B?tab=contract) and click **Verify & Publish**.
 2. Choose **Solidity (Flattened source code)**.
 3. Set **Compiler Version:** `v0.8.24+commit.e11b9ed9`
 4. Set **Optimization:** `Yes` (`200` runs) and check **Enable viaIR (`via_ir`: true)**.
@@ -55,11 +59,17 @@ To verify in 30 seconds in your browser:
 
 ---
 
-## 4. Production Hosting Deployment (Vercel)
+## 4. Production Hosting Deployments (Vercel & Railway)
 
-All environment defaults (`0xaA2dd131f596249755cCcdcC48447C1434Ac109B`, `$WIF`, Treasury, RPC, and Explorer) are pre-wired in `lib/chain/robinhood.ts` and `.env.example`:
+The game is live on two independent cloud infrastructures with full high availability:
 
-1. Import `https://github.com/OpeyemiMoses/WIF-WORLD` on [Vercel](https://vercel.com/new).
-2. Click **Deploy** (zero manual configuration required; optionally add `ADMIN_SESSION_SECRET` for admin cookie signing).
-3. Submit the resulting live `.vercel.app` URL to [https://worldisflat.fun/build](https://worldisflat.fun/build).
+1. **Vercel Production Deployment:**
+   - URL: [https://wif-world.vercel.app](https://wif-world.vercel.app)
+   - Features: Edge CDN caching, instant global serverless routing, zero cold starts.
 
+2. **Railway Production Deployment:**
+   - URL: [https://wif-world-production.up.railway.app](https://wif-world-production.up.railway.app)
+   - Features: Dedicated containerized Node.js runtime, Nixpacks build system, automated failover.
+
+3. **Submitting to Hackathon Portal:**
+   - Submit either [https://wif-world.vercel.app](https://wif-world.vercel.app) or [https://wif-world-production.up.railway.app](https://wif-world-production.up.railway.app) to [https://worldisflat.fun/build](https://worldisflat.fun/build).

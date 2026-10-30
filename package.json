@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "WIF WORLDS: The Living Map — Persistent multiplayer onchain strategy game on Robinhood Chain powered by $WIF",
+  "homepage": "https://wif-world.vercel.app",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
