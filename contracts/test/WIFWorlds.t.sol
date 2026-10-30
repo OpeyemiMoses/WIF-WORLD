@@ -36,6 +36,8 @@ contract WIFWorldsTest is Test {
     function test_Initialization() public view {
         assertTrue(game.isRegionUnlocked(0));
         assertFalse(game.isRegionUnlocked(1));
+        assertFalse(game.isRegionUnlocked(2));
+        assertFalse(game.isRegionUnlocked(3));
 
         WIFWorlds.Tile[49] memory r0 = game.getRegionMap(0);
         assertEq(r0.length, 49);
@@ -46,6 +48,35 @@ contract WIFWorldsTest is Test {
         assertEq(r1.length, 49);
         assertEq(r1[0].worldTileId, 49);
         assertEq(r1[0].regionId, 1);
+
+        WIFWorlds.Tile[49] memory r2 = game.getRegionMap(2);
+        assertEq(r2.length, 49);
+        assertEq(r2[0].worldTileId, 98);
+        assertEq(r2[0].regionId, 2);
+
+        WIFWorlds.Tile[49] memory r3 = game.getRegionMap(3);
+        assertEq(r3.length, 49);
+        assertEq(r3[0].worldTileId, 147);
+        assertEq(r3[0].regionId, 3);
+
+        // Verify all 5 World Events are configured onchain at Genesis
+        (string memory e1Title, , uint8 e1Unlock, uint256 e1Target, , , , bool e1Active) = game.getEvent(1);
+        assertEq(e1Title, "The Great Bridge");
+        assertEq(e1Unlock, 1);
+        assertEq(e1Target, 1250 ether);
+        assertTrue(e1Active);
+
+        (string memory e3Title, , uint8 e3Unlock, uint256 e3Target, , , , bool e3Active) = game.getEvent(3);
+        assertEq(e3Title, "The Frontier");
+        assertEq(e3Unlock, 2);
+        assertEq(e3Target, 1000 ether);
+        assertTrue(e3Active);
+
+        (string memory e5Title, , uint8 e5Unlock, uint256 e5Target, , , , bool e5Active) = game.getEvent(5);
+        assertEq(e5Title, "The Northern Passage");
+        assertEq(e5Unlock, 3);
+        assertEq(e5Target, 1500 ether);
+        assertTrue(e5Active);
     }
 
     function test_ClaimTile_Success() public {

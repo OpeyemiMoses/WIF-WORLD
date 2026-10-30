@@ -3,6 +3,8 @@ import { WIF_DECIMALS } from "@/lib/chain/robinhood";
 
 export const GRID_SIZE = 7;
 export const TILES_PER_REGION = GRID_SIZE * GRID_SIZE; // 49 tiles per region
+export const NUM_REGIONS = 4;
+export const TOTAL_WORLD_TILES = TILES_PER_REGION * NUM_REGIONS; // 196 tiles across 4 maps
 export const TOTAL_TILES = TILES_PER_REGION;
 export const MAX_SETTLEMENTS_PER_REGION = 3;
 export const MIN_SETTLEMENT_MANHATTAN_DISTANCE = 2;
@@ -123,7 +125,7 @@ export const REGIONS: RegionConfig[] = [
       "Untamed highland passes, mineral-rich basalt ridges, and deep frontier woods awaiting pioneer settlements.",
     specialtyLabel: "Abundant Stone & Timber (High-Yield Quarries & Signal Beacons)",
     unlockRequirementLabel:
-      "Unlocks automatically onchain when 'Build the Beacon' reaches 100%",
+      "Unlocks automatically onchain when Event #1 'The Great Bridge' reaches 100%",
     unlockedAtGenesis: false,
     mvpPlayable: true,
     landmarkTileLocalId: 24, // (3, 3) Frontier Watch Sanctuary
@@ -133,13 +135,14 @@ export const REGIONS: RegionConfig[] = [
     id: 2,
     slug: "highlands",
     name: "The Highlands",
-    subtitle: "Future Region • 7 × 7",
+    subtitle: "Obsidian Peaks • 7 × 7",
     description:
       "Elevated obsidian peaks with specialized mountain engineering milestones and deep stone veins.",
-    specialtyLabel: "Obsidian Quarries & High-Altitude Relays",
-    unlockRequirementLabel: "Planned Phase II Regional Milestone",
+    specialtyLabel: "Obsidian Quarries (+40 Stone/hr) & High-Altitude Relays",
+    unlockRequirementLabel:
+      "Unlocks automatically onchain when Event #3 'The Frontier' reaches 100%",
     unlockedAtGenesis: false,
-    mvpPlayable: false,
+    mvpPlayable: true,
     landmarkTileLocalId: 24,
     landmarkName: "Skyforge Summit",
   },
@@ -147,13 +150,14 @@ export const REGIONS: RegionConfig[] = [
     id: 3,
     slug: "crossroads",
     name: "The Crossroads",
-    subtitle: "Future Region • 7 × 7",
+    subtitle: "Sovereign Basin • 7 × 7",
     description:
       "Shared trade basin centered around multi-builder bridges, agricultural estates, and regional monuments.",
-    specialtyLabel: "Grand Granaries & Trade Causeways",
-    unlockRequirementLabel: "Planned Phase III Community Objective",
+    specialtyLabel: "Grand Granaries (+45 Food/hr) & Trade Causeways",
+    unlockRequirementLabel:
+      "Unlocks automatically onchain when Event #5 'The Northern Passage' reaches 100%",
     unlockedAtGenesis: false,
-    mvpPlayable: false,
+    mvpPlayable: true,
     landmarkTileLocalId: 24,
     landmarkName: "Grand Causeway",
   },
@@ -554,7 +558,7 @@ export const HEARTLANDS_TERRAIN_GRID: TerrainType[] = [
 ];
 
 /**
- * Region 1: The Wild Frontier (worldTileId 49..97) — Unlocked when Build the Beacon completes!
+ * Region 1: The Wild Frontier (worldTileId 49..97) — Unlocked when The Great Bridge completes!
  */
 export const WILD_FRONTIER_TERRAIN_GRID: TerrainType[] = [
   TerrainType.Rocky, TerrainType.Hills, TerrainType.Forest, TerrainType.Rocky, TerrainType.Forest, TerrainType.Hills, TerrainType.Water,
@@ -564,6 +568,32 @@ export const WILD_FRONTIER_TERRAIN_GRID: TerrainType[] = [
   TerrainType.Rocky, TerrainType.Forest, TerrainType.Plains, TerrainType.Hills, TerrainType.Forest, TerrainType.Hills, TerrainType.Forest,
   TerrainType.Hills, TerrainType.Plains, TerrainType.Forest, TerrainType.Rocky, TerrainType.Plains, TerrainType.Rocky, TerrainType.Hills,
   TerrainType.Water, TerrainType.Rocky, TerrainType.Hills, TerrainType.Forest, TerrainType.Hills, TerrainType.Plains, TerrainType.Water,
+];
+
+/**
+ * Region 2: The Highlands (worldTileId 98..146) — Unlocked when Event #3 The Frontier completes!
+ */
+export const HIGHLANDS_TERRAIN_GRID: TerrainType[] = [
+  TerrainType.Rocky, TerrainType.Rocky, TerrainType.Hills, TerrainType.Landmark, TerrainType.Hills, TerrainType.Rocky, TerrainType.Rocky,
+  TerrainType.Rocky, TerrainType.Hills, TerrainType.Rocky, TerrainType.Hills, TerrainType.Rocky, TerrainType.Hills, TerrainType.Rocky,
+  TerrainType.Hills, TerrainType.Forest, TerrainType.Hills, TerrainType.Plains, TerrainType.Hills, TerrainType.Forest, TerrainType.Hills,
+  TerrainType.Water, TerrainType.Hills, TerrainType.Plains, TerrainType.Landmark, TerrainType.Plains, TerrainType.Hills, TerrainType.Water,
+  TerrainType.Hills, TerrainType.Rocky, TerrainType.Forest, TerrainType.Hills, TerrainType.Forest, TerrainType.Rocky, TerrainType.Hills,
+  TerrainType.Rocky, TerrainType.Hills, TerrainType.Plains, TerrainType.Forest, TerrainType.Plains, TerrainType.Hills, TerrainType.Rocky,
+  TerrainType.Water, TerrainType.Rocky, TerrainType.Hills, TerrainType.Rocky, TerrainType.Hills, TerrainType.Rocky, TerrainType.Water,
+];
+
+/**
+ * Region 3: The Crossroads (worldTileId 147..195) — Unlocked when Event #5 The Northern Passage completes!
+ */
+export const CROSSROADS_TERRAIN_GRID: TerrainType[] = [
+  TerrainType.Water, TerrainType.Plains, TerrainType.Forest, TerrainType.Landmark, TerrainType.Forest, TerrainType.Plains, TerrainType.Water,
+  TerrainType.Plains, TerrainType.Forest, TerrainType.Plains, TerrainType.Plains, TerrainType.Plains, TerrainType.Forest, TerrainType.Plains,
+  TerrainType.Forest, TerrainType.Plains, TerrainType.Hills, TerrainType.Plains, TerrainType.Hills, TerrainType.Plains, TerrainType.Forest,
+  TerrainType.Landmark, TerrainType.Plains, TerrainType.Plains, TerrainType.Landmark, TerrainType.Plains, TerrainType.Plains, TerrainType.Landmark,
+  TerrainType.Forest, TerrainType.Plains, TerrainType.Hills, TerrainType.Plains, TerrainType.Hills, TerrainType.Plains, TerrainType.Forest,
+  TerrainType.Plains, TerrainType.Forest, TerrainType.Plains, TerrainType.Plains, TerrainType.Plains, TerrainType.Forest, TerrainType.Plains,
+  TerrainType.Water, TerrainType.Plains, TerrainType.Forest, TerrainType.Landmark, TerrainType.Forest, TerrainType.Plains, TerrainType.Water,
 ];
 
 export function getWorldTileId(regionId: number, localTileId: number): number {
@@ -620,11 +650,26 @@ export function getRegionLabel(worldTileId: number): string {
     if (row >= 5) return "Timberfall March • Wild Frontier";
     return "Untamed Basin • Wild Frontier";
   }
+  if (regionId === 2) {
+    if (localTileId === 3) return "Northern Crest Arch • The Highlands";
+    if (localTileId === 24) return "Skyforge Summit • The Highlands";
+    if (row <= 1) return "Obsidian Spire Ridge • The Highlands";
+    if (row >= 5) return "Deep Vein Ascent • The Highlands";
+    return "Highland Quarry Terrace • The Highlands";
+  }
+  if (regionId === 3) {
+    if (localTileId === 24) return "Grand Causeway Hub • The Crossroads";
+    if (localTileId === 3 || localTileId === 21 || localTileId === 27 || localTileId === 45)
+      return "Sovereign Gate Arch • The Crossroads";
+    if (row <= 1) return "Northern Trade Basin • The Crossroads";
+    if (row >= 5) return "Southern Granary Estate • The Crossroads";
+    return "Imperial Causeway • The Crossroads";
+  }
   return REGIONS[regionId]?.name ?? `Region ${regionId}`;
 }
 
 export interface TileState {
-  id: number;          // worldTileId (0..48 for Region 0, 49..97 for Region 1)
+  id: number;          // worldTileId (0..195 across 4 regions)
   localId: number;     // 0..48 within region
   regionId: number;
   row: number;
@@ -640,7 +685,13 @@ export interface TileState {
 
 export function createGenesisRegionTiles(regionId: number): TileState[] {
   const grid =
-    regionId === 1 ? WILD_FRONTIER_TERRAIN_GRID : HEARTLANDS_TERRAIN_GRID;
+    regionId === 3
+      ? CROSSROADS_TERRAIN_GRID
+      : regionId === 2
+      ? HIGHLANDS_TERRAIN_GRID
+      : regionId === 1
+      ? WILD_FRONTIER_TERRAIN_GRID
+      : HEARTLANDS_TERRAIN_GRID;
 
   return grid.map((terrain, localId) => {
     const id = getWorldTileId(regionId, localId);
@@ -658,7 +709,12 @@ export function createGenesisRegionTiles(regionId: number): TileState[] {
       hasSettlement: false,
       structureType: StructureType.None,
       claimedAt: 0,
-      isEventTarget: id === BEACON_TARGET_TILE_ID,
+      isEventTarget:
+        id === BEACON_TARGET_TILE_ID ||
+        id === 24 ||
+        id === 73 ||
+        id === 122 ||
+        id === 171,
     };
   });
 }

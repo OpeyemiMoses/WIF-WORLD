@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { IsometricWorldMap } from "@/components/world/IsometricWorldMap";
+import { MobileLandscapeGuard } from "@/components/world/MobileLandscapeGuard";
 import { IsometricTilePreview } from "@/components/tiles/IsometricTilePreview";
 import { BuildActionModal } from "@/components/build/BuildActionModal";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
@@ -412,14 +413,17 @@ export default function WorldScreen() {
   const completedMissionsCount = missions.filter((m) => m.completed).length;
 
   return (
-    <div className="animate-page-enter flex-1 flex flex-col lg:flex-row w-full h-full min-h-0 overflow-hidden bg-[#050C0F]">
+    <div className="animate-page-enter flex-1 flex flex-col landscape:flex-row lg:flex-row w-full h-full min-h-0 overflow-hidden bg-[#050C0F]">
+      {/* Mobile Portrait Blocker Overlay — instructs mobile users to rotate to Landscape Mode */}
+      <MobileLandscapeGuard />
+
       {/* Gamified Action, Upgrade & Camera Movement Celebration Overlay */}
       <GameEventCelebration event={celebrationEvent} />
 
       {/* LEFT / CENTER: Interactive 7x7 Isometric World Viewport */}
-      <div className="relative flex-1 min-h-[380px] lg:min-h-0 h-full w-full overflow-hidden bg-[#050C0F]">
+      <div className="relative flex-1 min-h-[340px] landscape:min-h-0 lg:min-h-0 h-full w-full overflow-hidden bg-[#050C0F]">
         {/* Top-Left Floating HUD: World Briefing + Multiplayer Tabs (Feed / Missions / Rankings) */}
-        <div className="absolute left-4 top-4 z-20 w-[296px] sm:w-[344px] rounded-2xl border border-white/[0.1] bg-[#101413]/92 p-4 shadow-panel backdrop-blur-md space-y-2.5">
+        <div className="absolute left-3 top-3 sm:left-4 sm:top-4 z-20 w-[268px] sm:w-[336px] max-lg:landscape:w-[250px] max-lg:landscape:p-2.5 rounded-2xl border border-white/[0.1] bg-[#101413]/92 p-4 shadow-panel backdrop-blur-md space-y-2.5 max-lg:landscape:space-y-1.5">
           <div className="flex items-center justify-between">
             <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-crimson-accent">
               <span className="h-2 w-2 rounded-full bg-crimson-accent animate-pulse shadow-[0_0_8px_#FF4D5A]" />
@@ -532,10 +536,10 @@ export default function WorldScreen() {
           </div>
         </div>
 
-        {/* Top Region Switcher + Live Resource Economy Bar (Strictly bounded between Left Card and Right Camera Toolbar so it never overlaps) */}
-        <div className="hidden md:flex absolute left-[364px] right-[56px] top-4 z-20 flex-col items-end xl:items-center gap-2 pointer-events-none">
+        {/* Top Region Switcher + Live Resource Economy Bar (All 4 Onchain Maps wired) */}
+        <div className="hidden md:flex landscape:flex absolute left-[264px] sm:left-[356px] right-[52px] top-3 sm:top-4 z-20 flex-col items-end xl:items-center gap-2 pointer-events-none">
           <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1 rounded-xl border border-white/[0.1] bg-[#101413]/92 p-1 backdrop-blur-md shadow-panel">
-            {REGIONS.filter((r) => r.mvpPlayable).map((reg) => {
+            {REGIONS.map((reg) => {
               const unlocked = Boolean(regionUnlockedMap[reg.id]);
               const selected = activeRegionId === reg.id;
               return (
@@ -544,27 +548,22 @@ export default function WorldScreen() {
                   type="button"
                   onClick={() => handleSelectRegion(reg.id)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                    "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-semibold transition-all",
                     selected
                       ? "bg-crimson text-white shadow-crimson-sm"
                       : "text-ink-secondary hover:text-white hover:bg-white/[0.04]"
                   )}
+                  title={`${reg.name} — ${reg.unlockRequirementLabel}`}
                 >
                   {unlocked ? (
-                    <Compass className="h-3.5 w-3.5" />
+                    <Compass className="h-3.5 w-3.5 shrink-0" />
                   ) : (
-                    <Lock className="h-3 w-3 text-amber-400" />
+                    <Lock className="h-3 w-3 text-amber-400 shrink-0" />
                   )}
-                  <span>{reg.name}</span>
+                  <span className=" whitespace-nowrap">{reg.name}</span>
                 </button>
               );
             })}
-            <span
-              className="hidden 2xl:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] text-ink-dim"
-              title="The Highlands & The Crossroads unlock in future world phases"
-            >
-              +2 Charted Regions
-            </span>
             <button
               type="button"
               onClick={() => setOnboardingOpen(true)}
@@ -916,11 +915,11 @@ export default function WorldScreen() {
       </div>
 
       {/* RIGHT SIDEBAR: Resource Economy + Progression + Tile Inspector + Strategic Actions */}
-      <aside className="w-full lg:w-[392px] xl:w-[420px] shrink-0 border-t lg:border-t-0 lg:border-l border-white/[0.08] bg-[#101413] flex flex-col overflow-y-auto">
-        <div className="p-5 space-y-4 flex-1">
-          {/* Mobile Region Switcher */}
-          <div className="flex md:hidden items-center gap-1.5 rounded-xl border border-white/[0.08] bg-obsidian p-1">
-            {REGIONS.filter((r) => r.mvpPlayable).map((reg) => {
+      <aside className="w-full landscape:w-[320px] lg:w-[392px] xl:w-[420px] shrink-0 border-t landscape:border-t-0 lg:border-t-0 landscape:border-l lg:border-l border-white/[0.08] bg-[#101413] flex flex-col overflow-y-auto">
+        <div className="p-4 sm:p-5 space-y-4 flex-1">
+          {/* Compact Region Switcher for small viewports */}
+          <div className="grid grid-cols-2 gap-1.5 md:hidden rounded-xl border border-white/[0.08] bg-obsidian p-1.5">
+            {REGIONS.map((reg) => {
               const unlocked = Boolean(regionUnlockedMap[reg.id]);
               return (
                 <button
@@ -928,14 +927,14 @@ export default function WorldScreen() {
                   type="button"
                   onClick={() => handleSelectRegion(reg.id)}
                   className={cn(
-                    "flex-1 inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-semibold",
+                    "inline-flex items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold truncate",
                     activeRegionId === reg.id
                       ? "bg-crimson text-white"
-                      : "text-ink-secondary"
+                      : "text-ink-secondary hover:text-white"
                   )}
                 >
-                  {!unlocked && <Lock className="h-3 w-3 text-amber-400" />}
-                  <span>{reg.name}</span>
+                  {!unlocked && <Lock className="h-3 w-3 text-amber-400 shrink-0" />}
+                  <span className="truncate">{reg.name}</span>
                 </button>
               );
             })}

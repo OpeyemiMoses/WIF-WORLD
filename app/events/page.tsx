@@ -44,55 +44,61 @@ import {
 
 const PRESET_AMOUNTS = ["5", "10", "25", "50"];
 
-const FUTURE_EVENT_TEMPLATES = [
+const EVENT_METADATA_BY_ID: Record<
+  number,
   {
-    id: "the-great-harvest",
+    icon: typeof Wheat;
+    region: string;
+    phase: string;
+    materials: string;
+    description: string;
+  }
+> = {
+  1: {
+    icon: Flame,
+    region: "The Heartlands • Northern Strait (3, 0)",
+    phase: "Onchain Event #1",
+    materials: "1,200 Wood • 900 Stone • 600 Food",
+    description:
+      "Construct The Great Bridge across the Northern Strait to permanently unlock Region 1: The Wild Frontier (49 new tiles) for every player.",
+  },
+  2: {
     icon: Wheat,
-    title: "The Great Harvest",
-    region: "The Heartlands • Fertile Plains",
-    phase: "Event Template #2",
-    requiredWif: "750 $WIF",
+    region: "The Heartlands • Fertile Plains (3, 3)",
+    phase: "Onchain Event #2",
     materials: "800 Wood • 400 Stone • 1,800 Food",
     description:
       "Unite regional Farms and granaries across The Heartlands to stockpile winter provisions and permanently boost regional Food storage capacity.",
   },
-  {
-    id: "the-frontier",
+  3: {
     icon: Compass,
-    title: "The Frontier",
-    region: "Region 2 • The Wild Frontier",
-    phase: "Event Template #3",
-    requiredWif: "1,000 $WIF",
+    region: "Region 1 • The Wild Frontier (3, 3)",
+    phase: "Onchain Event #3",
     materials: "1,500 Wood • 1,200 Stone • 900 Food",
     description:
-      "Establish fortified frontier outposts and supply roads across the newly unlocked Wild Frontier to open deep quarry ridges.",
+      "Establish fortified frontier outposts and supply roads across the Wild Frontier to automatically unlock Region 2: The Highlands.",
   },
-  {
-    id: "the-forgotten-monument",
+  4: {
     icon: Landmark,
-    title: "The Forgotten Monument",
-    region: "Central Sanctuary • Tile (3, 3)",
-    phase: "Event Template #4",
-    requiredWif: "1,250 $WIF",
+    region: "Region 2 • Skyforge Summit (3, 3)",
+    phase: "Onchain Event #4",
     materials: "1,000 Wood • 2,000 Stone • 800 Food",
     description:
-      "Excavate and restore the ancient obsidian monolith at the center of the island to awaken realm-wide Signal Beacon resonance.",
+      "Excavate and restore the ancient obsidian monolith at Skyforge Summit in The Highlands to awaken realm-wide Signal Beacon resonance.",
   },
-  {
-    id: "the-northern-passage",
+  5: {
     icon: Mountain,
-    title: "The Northern Passage",
-    region: "Region 3 • The Highlands",
-    phase: "Event Template #5",
-    requiredWif: "1,500 $WIF",
+    region: "Region 3 • Grand Causeway (3, 3)",
+    phase: "Onchain Event #5",
     materials: "1,600 Wood • 2,400 Stone • 1,200 Food",
     description:
-      "Carve a high-altitude stone causeway through the northern crags to unlock Region 3: The Highlands for master builders.",
+      "Carve a high-altitude stone causeway through the northern crags to automatically unlock Region 3: The Crossroads for master builders.",
   },
-];
+};
 
 export default function WorldEventsPage() {
   const [contributeModalOpen, setContributeModalOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<number>(1);
   const [amountInput, setAmountInput] = useState("10");
 
   const {
@@ -111,10 +117,17 @@ export default function WorldEventsPage() {
     isContractDeployed,
     treasuryAddress,
     worldEvent,
+    allWorldEvents,
     activities,
     isLoadingLogs,
     refreshAllWorldState,
   } = useWorldData(address);
+
+  const selectedModalEvent = useMemo(
+    () =>
+      allWorldEvents.find((ev) => ev.id === selectedEventId) ?? worldEvent,
+    [allWorldEvents, selectedEventId, worldEvent]
+  );
 
   const handleFullRefresh = async () => {
     await Promise.all([refreshAllWorldState(), refetchBalances()]);
@@ -154,8 +167,8 @@ export default function WorldEventsPage() {
 
   const canSubmitContribution =
     isContractDeployed &&
-    worldEvent.active &&
-    !worldEvent.completed &&
+    selectedModalEvent.active &&
+    !selectedModalEvent.completed &&
     isConnected &&
     !isWrongNetwork &&
     Boolean(parsedAmount) &&
@@ -178,7 +191,7 @@ export default function WorldEventsPage() {
 
     await executeGameAction({
       action: "event",
-      eventId: worldEvent.id,
+      eventId: selectedModalEvent.id,
       amount: parsedAmount,
     });
   };
@@ -348,6 +361,7 @@ export default function WorldEventsPage() {
                   type="button"
                   onClick={() => {
                     resetTxState();
+                    setSelectedEventId(worldEvent.id);
                     setContributeModalOpen(true);
                   }}
                   disabled={worldEvent.completed}
@@ -580,54 +594,107 @@ export default function WorldEventsPage() {
             )}
           </div>
 
-          {/* Right (5 cols): Future World Event Templates */}
+          {/* Right (5 cols): All 5 Onchain Configured World Events */}
           <div className="lg:col-span-5 rounded-2xl border border-amber-200/15 bg-[#111514]/90 backdrop-blur-md shadow-panel p-6 space-y-4">
-            <div>
-              <h2 className="text-lg font-bold text-ink-primary">
-                Future World Event Templates
-              </h2>
-              <p className="text-xs text-ink-muted mt-0.5">
-                Ready-to-launch community objectives following The Great Bridge
-              </p>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-bold text-ink-primary">
+                  Onchain Configured World Events
+                </h2>
+                <p className="text-xs text-ink-muted mt-0.5">
+                  All 5 regional objectives live on Robinhood Chain (events[1..5])
+                </p>
+              </div>
+              <span className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 font-mono text-[10px] font-bold text-emerald-300">
+                5/5 Onchain
+              </span>
             </div>
 
             <div className="space-y-3">
-              {FUTURE_EVENT_TEMPLATES.map((ev, idx) => {
-                const Icon = ev.icon;
-                return (
-                  <ScrollReveal key={ev.id} variant="pop" delayMs={idx * 70}>
-                    <div className="gamified-card rounded-xl border border-white/[0.08] bg-obsidian/75 p-4 space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#181D1B] text-amber-300">
-                            <Icon className="h-4 w-4" />
+              {allWorldEvents
+                .filter((ev) => ev.id !== worldEvent.id)
+                .map((ev, idx) => {
+                  const meta = EVENT_METADATA_BY_ID[ev.id] ?? EVENT_METADATA_BY_ID[2];
+                  const Icon = meta.icon;
+                  const evPct =
+                    ev.targetAmount > 0n
+                      ? Math.min(
+                          100,
+                          Math.round(
+                            Number((ev.totalContributed * 10000n) / ev.targetAmount) /
+                              100
+                          )
+                        )
+                      : 0;
+                  return (
+                    <ScrollReveal key={ev.id} variant="pop" delayMs={idx * 70}>
+                      <div className="gamified-card rounded-xl border border-white/[0.08] bg-obsidian/75 p-4 space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#181D1B] text-amber-300">
+                              <Icon className="h-4 w-4" />
+                            </span>
+                            <div>
+                              <h3 className="text-sm font-bold text-ink-primary">
+                                {ev.title}
+                              </h3>
+                              <p className="text-[11px] text-ink-muted">
+                                {meta.region} • Tile {formatCoords(ev.targetTileId)}
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className={cn(
+                              "rounded-full border px-2.5 py-0.5 text-[10px] font-semibold",
+                              ev.completed
+                                ? "border-emerald-400/35 bg-emerald-500/15 text-emerald-300"
+                                : ev.active
+                                ? "border-crimson/35 bg-crimson/15 text-crimson-accent"
+                                : "border-white/[0.08] bg-[#161A19] text-amber-200/90"
+                            )}
+                          >
+                            {ev.completed
+                              ? "Completed"
+                              : ev.active
+                              ? `${meta.phase} • Live`
+                              : meta.phase}
                           </span>
-                          <div>
-                            <h3 className="text-sm font-bold text-ink-primary">
-                              {ev.title}
-                            </h3>
-                            <p className="text-[11px] text-ink-muted">
-                              {ev.region}
-                            </p>
+                        </div>
+                        <p className="text-xs leading-relaxed text-ink-secondary">
+                          {meta.description}
+                        </p>
+
+                        {/* Onchain Progress Bar */}
+                        <div className="space-y-1">
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-crimson to-amber-300 transition-all"
+                              style={{ width: `${evPct}%` }}
+                            />
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 font-mono text-[10px] text-ink-muted">
+                            <span className="text-crimson-accent font-semibold">
+                              Onchain: {formatWif(ev.totalContributed, 0)} /{" "}
+                              {formatWif(ev.targetAmount, 0)} $WIF ({evPct}%)
+                            </span>
+                            <button
+                              type="button"
+                              disabled={!ev.active || ev.completed}
+                              onClick={() => {
+                                resetTxState();
+                                setSelectedEventId(ev.id);
+                                setContributeModalOpen(true);
+                              }}
+                              className="rounded-lg border border-crimson/35 bg-crimson/15 px-2.5 py-1 text-[10px] font-bold text-crimson-accent hover:bg-crimson hover:text-white disabled:opacity-40 transition-colors"
+                            >
+                              {ev.completed ? "Completed" : "Contribute $WIF"}
+                            </button>
                           </div>
                         </div>
-                        <span className="rounded-full border border-white/[0.08] bg-[#161A19] px-2.5 py-0.5 text-[10px] font-semibold text-amber-200/90">
-                          {ev.phase}
-                        </span>
                       </div>
-                      <p className="text-xs leading-relaxed text-ink-secondary">
-                        {ev.description}
-                      </p>
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/[0.06] font-mono text-[10px] text-ink-muted">
-                        <span className="text-crimson-accent font-semibold">
-                          Goal: {ev.requiredWif}
-                        </span>
-                        <span>{ev.materials}</span>
-                      </div>
-                    </div>
-                  </ScrollReveal>
-                );
-              })}
+                    </ScrollReveal>
+                  );
+                })}
             </div>
           </div>
           </section>
@@ -641,10 +708,10 @@ export default function WorldEventsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-crimson-accent">
-                  Community Construction • Event #1
+                  Community Construction • Event #{selectedModalEvent.id}
                 </span>
                 <h2 className="text-xl font-bold text-ink-primary mt-0.5">
-                  Contribute to {displayTitle}
+                  Contribute to {selectedModalEvent.title}
                 </h2>
               </div>
               <button
@@ -711,13 +778,16 @@ export default function WorldEventsPage() {
               <div className="flex justify-between">
                 <span className="text-ink-muted">Target Location</span>
                 <span className="font-mono text-ink-primary">
-                  Northern Strait {formatCoords(worldEvent.targetTileId)}
+                  Tile #{selectedModalEvent.targetTileId} •{" "}
+                  {formatCoords(selectedModalEvent.targetTileId)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-ink-muted">Target Region Unlocked</span>
                 <span className="text-amber-300 font-semibold">
-                  Region 2: The Wild Frontier
+                  {selectedModalEvent.unlocksRegionId !== null
+                    ? `Region ${selectedModalEvent.unlocksRegionId + 1}`
+                    : "Realm-Wide Buff"}
                 </span>
               </div>
               <div className="flex justify-between">

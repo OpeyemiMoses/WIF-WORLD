@@ -16,6 +16,8 @@ contract WIFWorlds is Ownable {
 
     uint8 public constant GRID_SIZE = 7;
     uint8 public constant TILES_PER_REGION = 49;
+    uint8 public constant NUM_REGIONS = 4;
+    uint16 public constant TOTAL_WORLD_TILES = 196;
     uint8 public constant MAX_SETTLEMENTS_PER_REGION = 3;
     uint8 public constant MIN_SETTLEMENT_MANHATTAN_DISTANCE = 2;
     uint8 public constant MAX_SETTLEMENT_LEVEL = 5;
@@ -137,25 +139,69 @@ contract WIFWorlds is Ownable {
         treasury = _treasury == address(0) ? msg.sender : _treasury;
         admin = treasury;
 
-        // Initialize Region 0 (The Heartlands)
+        // Initialize Region 0 (The Heartlands - tiles 0..48 unlocked at genesis)
         isRegionUnlocked[0] = true;
-        _initRegion0();
 
-        // Initialize Region 1 (The Wild Frontier - locked until Great Bridge / Beacon milestone)
-        isRegionUnlocked[1] = false;
-        _initRegion1();
-
-        // Initialize Event #1: The Great Bridge (unlocks Region 1 upon 100% completion)
+        // Initialize all 5 World Events onchain
         events[1] = WorldEvent({
             title: "The Great Bridge",
             targetWorldTileId: 3, // (3, 0) Northern Crossing Spire in Region 0
-            unlocksRegionId: 1,    // Automatically unlocks Region 1
+            unlocksRegionId: 1,   // Automatically unlocks Region 1: The Wild Frontier
             targetAmount: 1250 ether,
             totalContributed: 0,
             deadline: 0,
             completed: false,
             active: true
         });
+        emit EventConfigured(1, "The Great Bridge", 1250 ether, 1, true);
+
+        events[2] = WorldEvent({
+            title: "The Great Harvest",
+            targetWorldTileId: 24, // (3, 3) Heartlands Central Sanctuary
+            unlocksRegionId: 255,
+            targetAmount: 750 ether,
+            totalContributed: 0,
+            deadline: 0,
+            completed: false,
+            active: true
+        });
+        emit EventConfigured(2, "The Great Harvest", 750 ether, 255, true);
+
+        events[3] = WorldEvent({
+            title: "The Frontier",
+            targetWorldTileId: 73, // (3, 3) Frontier Watch Monolith in Region 1
+            unlocksRegionId: 2,    // Automatically unlocks Region 2: The Highlands
+            targetAmount: 1000 ether,
+            totalContributed: 0,
+            deadline: 0,
+            completed: false,
+            active: true
+        });
+        emit EventConfigured(3, "The Frontier", 1000 ether, 2, true);
+
+        events[4] = WorldEvent({
+            title: "The Forgotten Monument",
+            targetWorldTileId: 122, // (3, 3) Skyforge Summit in Region 2
+            unlocksRegionId: 255,
+            targetAmount: 1250 ether,
+            totalContributed: 0,
+            deadline: 0,
+            completed: false,
+            active: true
+        });
+        emit EventConfigured(4, "The Forgotten Monument", 1250 ether, 255, true);
+
+        events[5] = WorldEvent({
+            title: "The Northern Passage",
+            targetWorldTileId: 171, // (3, 3) Grand Causeway in Region 3
+            unlocksRegionId: 3,     // Automatically unlocks Region 3: The Crossroads
+            targetAmount: 1500 ether,
+            totalContributed: 0,
+            deadline: 0,
+            completed: false,
+            active: true
+        });
+        emit EventConfigured(5, "The Northern Passage", 1500 ether, 3, true);
     }
 
     // ==========================================
@@ -173,11 +219,14 @@ contract WIFWorlds is Ownable {
      * @notice Claim a neutral tile in an unlocked region.
      */
     function claimTile(uint256 worldTileId) external {
-        require(worldTileId < 98, "Invalid tile ID");
-        Tile storage t = tiles[uint16(worldTileId)];
-        require(isRegionUnlocked[t.regionId], "Region locked");
-        require(t.terrain != uint8(TerrainType.Water), "Water cannot be claimed");
-        require(t.terrain != uint8(TerrainType.Landmark), "Landmarks cannot be claimed");
+        require(worldTileId < TOTAL_WORLD_TILES, "Invalid tile ID");
+        uint16 id = uint16(worldTileId);
+        uint8 regionId = uint8(id / TILES_PER_REGION);
+        uint8 terrain = _getTerrain(id);
+        Tile storage t = tiles[id];
+        require(isRegionUnlocked[regionId], "Region locked");
+        require(terrain != uint8(TerrainType.Water), "Water cannot be claimed");
+        require(terrain != uint8(TerrainType.Landmark), "Landmarks cannot be claimed");
         require(t.owner == address(0), "Tile already claimed");
 
         _syncResources(msg.sender);
@@ -198,18 +247,21 @@ contract WIFWorlds is Ownable {
         }
 
         // State update
+        t.worldTileId = id;
+        t.regionId = regionId;
+        t.terrain = terrain;
         t.owner = msg.sender;
         t.claimedAt = uint32(block.timestamp);
         ps.tilesClaimed += 1;
 
-        emit TileClaimed(worldTileId, msg.sender, t.regionId, claimCost);
+        emit TileClaimed(worldTileId, msg.sender, regionId, claimCost);
     }
 
     /**
      * @notice Found a new Settlement Hall (Lv. 1) on an owned tile.
      */
     function buildSettlement(uint256 worldTileId) external {
-        require(worldTileId < 98, "Invalid tile ID");
+        require(worldTileId < TOTAL_WORLD_TILES, "Invalid tile ID");
         Tile storage t = tiles[uint16(worldTileId)];
         require(isRegionUnlocked[t.regionId], "Region locked");
         require(t.owner == msg.sender, "Must own tile");
@@ -266,7 +318,7 @@ contract WIFWorlds is Ownable {
      *         Lv.4 -> Lv.5 (Regional projects leadership)
      */
     function upgradeSettlement(uint256 worldTileId) external {
-        require(worldTileId < 98, "Invalid tile ID");
+        require(worldTileId < TOTAL_WORLD_TILES, "Invalid tile ID");
         Tile storage t = tiles[uint16(worldTileId)];
         require(isRegionUnlocked[t.regionId], "Region locked");
         require(t.owner == msg.sender, "Must own tile");
@@ -329,7 +381,7 @@ contract WIFWorlds is Ownable {
      *         1 = Outpost, 2 = Workshop, 3 = Beacon, 4 = LumberCamp, 5 = Quarry, 6 = Farm.
      */
     function buildStructure(uint256 worldTileId, uint8 structureType) external {
-        require(worldTileId < 98, "Invalid tile ID");
+        require(worldTileId < TOTAL_WORLD_TILES, "Invalid tile ID");
         require(structureType >= 1 && structureType <= 6, "Invalid structure type");
 
         Tile storage t = tiles[uint16(worldTileId)];
@@ -462,15 +514,16 @@ contract WIFWorlds is Ownable {
     // ==========================================
 
     function getRegionMap(uint8 regionId) external view returns (Tile[49] memory out) {
+        require(regionId < NUM_REGIONS, "Invalid region ID");
         uint16 base = uint16(regionId) * TILES_PER_REGION;
         for (uint16 i = 0; i < 49; i++) {
-            out[i] = tiles[base + i];
+            out[i] = _readTile(base + i);
         }
     }
 
     function getTile(uint256 worldTileId) external view returns (Tile memory) {
-        require(worldTileId < 98, "Invalid tile ID");
-        return tiles[uint16(worldTileId)];
+        require(worldTileId < TOTAL_WORLD_TILES, "Invalid tile ID");
+        return _readTile(uint16(worldTileId));
     }
 
     function getPlayerState(address player) external view returns (PlayerState memory) {
@@ -715,52 +768,33 @@ contract WIFWorlds is Ownable {
         return false;
     }
 
-    function _initRegion0() internal {
-        // Deterministic 49 tiles for The Heartlands
-        uint8[49] memory terrains = [
-            3, 4, 2, 5, 2, 4, 3,
-            4, 1, 0, 2, 1, 0, 2,
-            3, 0, 1, 0, 2, 1, 0,
-            0, 2, 0, 5, 0, 2, 3,
-            1, 0, 2, 1, 0, 1, 4,
-            2, 1, 0, 0, 1, 2, 3,
-            3, 0, 1, 4, 2, 0, 3
-        ];
-        for (uint16 i = 0; i < 49; i++) {
-            tiles[i] = Tile({
-                worldTileId: i,
-                regionId: 0,
-                terrain: terrains[i],
-                owner: address(0),
-                settlementLevel: 0,
-                structureType: 0,
-                claimedAt: 0
-            });
-        }
+    function _readTile(uint16 id) internal view returns (Tile memory) {
+        Tile memory t = tiles[id];
+        t.worldTileId = id;
+        t.regionId = uint8(id / TILES_PER_REGION);
+        t.terrain = _getTerrain(id);
+        return t;
     }
 
-    function _initRegion1() internal {
-        // Deterministic 49 tiles for The Wild Frontier
-        uint8[49] memory terrains = [
-            4, 2, 1, 4, 1, 2, 3,
-            2, 1, 2, 0, 2, 4, 2,
-            1, 0, 4, 1, 0, 1, 3,
-            3, 2, 1, 5, 2, 0, 4,
-            4, 1, 0, 2, 1, 2, 1,
-            2, 0, 1, 4, 0, 4, 2,
-            3, 4, 2, 1, 2, 0, 3
-        ];
-        for (uint16 i = 0; i < 49; i++) {
-            uint16 id = 49 + i;
-            tiles[id] = Tile({
-                worldTileId: id,
-                regionId: 1,
-                terrain: terrains[i],
-                owner: address(0),
-                settlementLevel: 0,
-                structureType: 0,
-                claimedAt: 0
-            });
+    function _getTerrain(uint16 worldTileId) internal pure returns (uint8) {
+        uint8 regionId = uint8(worldTileId / TILES_PER_REGION);
+        uint8 localId = uint8(worldTileId % TILES_PER_REGION);
+        if (regionId == 0) {
+            // Region 0: The Heartlands (0..48)
+            bytes memory r0 = hex"03040205020403040100020100020300010002010000020005000203010002010001040201000001020303000104020003";
+            return uint8(r0[localId]);
+        } else if (regionId == 1) {
+            // Region 1: The Wild Frontier (49..97)
+            bytes memory r1 = hex"04020104010203020102000204020100040100010303020105020004040100020102010200010400040203040201020003";
+            return uint8(r1[localId]);
+        } else if (regionId == 2) {
+            // Region 2: The Highlands (98..146)
+            bytes memory r2 = hex"04040205020404040204020402040201020002010203020005000203020401020104020402000100020403040204020403";
+            return uint8(r2[localId]);
+        } else {
+            // Region 3: The Crossroads (147..195)
+            bytes memory r3 = hex"03000105010003000100000001000100020002000105000005000005010002000200010001000000010003000105010003";
+            return uint8(r3[localId]);
         }
     }
 }

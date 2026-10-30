@@ -290,6 +290,7 @@ export function useWorldData(
     refetch: refetchWorldContracts,
   } = useReadContracts({
     contracts: [
+      // 0..3: All 4 Region Maps (49 tiles each = 196 total world tiles)
       {
         address: contractAddress,
         abi: WIF_WORLDS_ABI,
@@ -307,6 +308,28 @@ export function useWorldData(
       {
         address: contractAddress,
         abi: WIF_WORLDS_ABI,
+        functionName: "getRegionMap",
+        args: [2],
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "getRegionMap",
+        args: [3],
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      // 4..7: Region Unlock Statuses (0..3)
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "isRegionUnlocked",
+        args: [0],
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
         functionName: "isRegionUnlocked",
         args: [1],
         chainId: ROBINHOOD_CHAIN_ID,
@@ -314,7 +337,64 @@ export function useWorldData(
       {
         address: contractAddress,
         abi: WIF_WORLDS_ABI,
+        functionName: "isRegionUnlocked",
+        args: [2],
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "isRegionUnlocked",
+        args: [3],
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      // 8..21: Live Onchain Economy Costs
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
         functionName: "claimCost",
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "settlementSlot1Cost",
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "settlementSlot2Cost",
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "settlementSlot3Cost",
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "upgradeToLv2Cost",
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "upgradeToLv3Cost",
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "upgradeToLv4Cost",
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "upgradeToLv5Cost",
         chainId: ROBINHOOD_CHAIN_ID,
       },
       {
@@ -341,6 +421,28 @@ export function useWorldData(
       {
         address: contractAddress,
         abi: WIF_WORLDS_ABI,
+        functionName: "structureCost",
+        args: [StructureType.LumberCamp],
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "structureCost",
+        args: [StructureType.Quarry],
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "structureCost",
+        args: [StructureType.Farm],
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      // 22..23: Treasury & Active Event ID
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
         functionName: "treasury",
         chainId: ROBINHOOD_CHAIN_ID,
       },
@@ -348,6 +450,42 @@ export function useWorldData(
         address: contractAddress,
         abi: WIF_WORLDS_ABI,
         functionName: "activeEventId",
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      // 24..28: All 5 Onchain World Events (events[1..5])
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "getEvent",
+        args: [1n],
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "getEvent",
+        args: [2n],
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "getEvent",
+        args: [3n],
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "getEvent",
+        args: [4n],
+        chainId: ROBINHOOD_CHAIN_ID,
+      },
+      {
+        address: contractAddress,
+        abi: WIF_WORLDS_ABI,
+        functionName: "getEvent",
+        args: [5n],
         chainId: ROBINHOOD_CHAIN_ID,
       },
     ],
@@ -358,7 +496,7 @@ export function useWorldData(
   });
 
   const activeEventId =
-    (batchData?.[8]?.result as bigint | undefined) ?? 1n;
+    (batchData?.[23]?.result as bigint | undefined) ?? 1n;
 
   const { data: eventRaw, refetch: refetchEvent } = useReadContract({
     address: contractAddress,
@@ -589,55 +727,234 @@ export function useWorldData(
     [batchData, isContractDeployed]
   );
 
+  const highlandsTiles = useMemo(
+    () =>
+      mapRawRegionTiles(
+        batchData?.[2]?.result as never,
+        2,
+        isContractDeployed
+      ),
+    [batchData, isContractDeployed]
+  );
+
+  const crossroadsTiles = useMemo(
+    () =>
+      mapRawRegionTiles(
+        batchData?.[3]?.result as never,
+        3,
+        isContractDeployed
+      ),
+    [batchData, isContractDeployed]
+  );
+
+  const isHeartlandsUnlocked = Boolean(
+    !isContractDeployed || batchData?.[4]?.result !== false
+  );
   const isWildFrontierUnlocked = Boolean(
-    isContractDeployed && batchData?.[2]?.result === true
+    isContractDeployed && batchData?.[5]?.result === true
+  );
+  const isHighlandsUnlocked = Boolean(
+    isContractDeployed && batchData?.[6]?.result === true
+  );
+  const isCrossroadsUnlocked = Boolean(
+    isContractDeployed && batchData?.[7]?.result === true
   );
 
   const regionUnlockedMap: Record<number, boolean> = useMemo(
     () => ({
-      0: true,
+      0: isHeartlandsUnlocked,
       1: isWildFrontierUnlocked,
-      2: false,
-      3: false,
+      2: isHighlandsUnlocked,
+      3: isCrossroadsUnlocked,
     }),
-    [isWildFrontierUnlocked]
+    [
+      isCrossroadsUnlocked,
+      isHeartlandsUnlocked,
+      isHighlandsUnlocked,
+      isWildFrontierUnlocked,
+    ]
   );
 
   const tiles: TileState[] = useMemo(() => {
+    if (activeRegionId === 3) return crossroadsTiles;
+    if (activeRegionId === 2) return highlandsTiles;
     if (activeRegionId === 1) return frontierTiles;
     return heartlandsTiles;
-  }, [activeRegionId, frontierTiles, heartlandsTiles]);
+  }, [
+    activeRegionId,
+    crossroadsTiles,
+    frontierTiles,
+    heartlandsTiles,
+    highlandsTiles,
+  ]);
 
   const allPlayableTiles: TileState[] = useMemo(
-    () => [...heartlandsTiles, ...frontierTiles],
-    [frontierTiles, heartlandsTiles]
+    () => [
+      ...heartlandsTiles,
+      ...frontierTiles,
+      ...highlandsTiles,
+      ...crossroadsTiles,
+    ],
+    [crossroadsTiles, frontierTiles, heartlandsTiles, highlandsTiles]
   );
 
   const costs = useMemo(
     () => ({
-      claim: (batchData?.[3]?.result as bigint | undefined) ?? DEFAULT_COSTS.claim,
-      settlementSlot1: DEFAULT_COSTS.settlementSlot1,
-      settlementSlot2: DEFAULT_COSTS.settlementSlot2,
-      settlementSlot3: DEFAULT_COSTS.settlementSlot3,
-      upgradeToLv2: DEFAULT_COSTS.upgradeToLv2,
-      upgradeToLv3: DEFAULT_COSTS.upgradeToLv3,
-      upgradeToLv4: DEFAULT_COSTS.upgradeToLv4,
-      upgradeToLv5: DEFAULT_COSTS.upgradeToLv5,
+      claim:
+        (batchData?.[8]?.result as bigint | undefined) ?? DEFAULT_COSTS.claim,
+      settlementSlot1:
+        (batchData?.[9]?.result as bigint | undefined) ??
+        DEFAULT_COSTS.settlementSlot1,
+      settlementSlot2:
+        (batchData?.[10]?.result as bigint | undefined) ??
+        DEFAULT_COSTS.settlementSlot2,
+      settlementSlot3:
+        (batchData?.[11]?.result as bigint | undefined) ??
+        DEFAULT_COSTS.settlementSlot3,
+      upgradeToLv2:
+        (batchData?.[12]?.result as bigint | undefined) ??
+        DEFAULT_COSTS.upgradeToLv2,
+      upgradeToLv3:
+        (batchData?.[13]?.result as bigint | undefined) ??
+        DEFAULT_COSTS.upgradeToLv3,
+      upgradeToLv4:
+        (batchData?.[14]?.result as bigint | undefined) ??
+        DEFAULT_COSTS.upgradeToLv4,
+      upgradeToLv5:
+        (batchData?.[15]?.result as bigint | undefined) ??
+        DEFAULT_COSTS.upgradeToLv5,
       outpost:
-        (batchData?.[4]?.result as bigint | undefined) ?? DEFAULT_COSTS.outpost,
+        (batchData?.[16]?.result as bigint | undefined) ??
+        DEFAULT_COSTS.outpost,
       workshop:
-        (batchData?.[5]?.result as bigint | undefined) ?? DEFAULT_COSTS.workshop,
+        (batchData?.[17]?.result as bigint | undefined) ??
+        DEFAULT_COSTS.workshop,
       beacon:
-        (batchData?.[6]?.result as bigint | undefined) ?? DEFAULT_COSTS.beacon,
-      lumberCamp: DEFAULT_COSTS.lumberCamp,
-      quarry: DEFAULT_COSTS.quarry,
-      farm: DEFAULT_COSTS.farm,
+        (batchData?.[18]?.result as bigint | undefined) ?? DEFAULT_COSTS.beacon,
+      lumberCamp:
+        (batchData?.[19]?.result as bigint | undefined) ??
+        DEFAULT_COSTS.lumberCamp,
+      quarry:
+        (batchData?.[20]?.result as bigint | undefined) ?? DEFAULT_COSTS.quarry,
+      farm:
+        (batchData?.[21]?.result as bigint | undefined) ?? DEFAULT_COSTS.farm,
     }),
     [batchData]
   );
 
   const treasuryAddress =
-    (batchData?.[7]?.result as `0x${string}` | undefined) ?? null;
+    (batchData?.[22]?.result as `0x${string}` | undefined) ?? null;
+
+  const allWorldEvents: WorldEventState[] = useMemo(() => {
+    const defaults: WorldEventState[] = [
+      {
+        id: 1,
+        title: "The Great Bridge",
+        description:
+          "Two regions — The Heartlands and The Wild Frontier — are separated by a deep northern strait. Contribute $WIF to construct The Great Bridge at (3, 0) and unlock Region 1: The Wild Frontier (49 new tiles) for every player.",
+        targetTileId: 3,
+        unlocksRegionId: 1,
+        targetAmount: parseUnits("1250", WIF_DECIMALS),
+        totalContributed: 0n,
+        deadline: 0,
+        completed: false,
+        active: true,
+      },
+      {
+        id: 2,
+        title: "The Great Harvest",
+        description:
+          "Unite regional Farms and granaries across The Heartlands to stockpile winter provisions at Central Sanctuary (3, 3) and permanently boost regional Food storage capacity.",
+        targetTileId: 24,
+        unlocksRegionId: null,
+        targetAmount: parseUnits("750", WIF_DECIMALS),
+        totalContributed: 0n,
+        deadline: 0,
+        completed: false,
+        active: true,
+      },
+      {
+        id: 3,
+        title: "The Frontier",
+        description:
+          "Establish fortified frontier outposts and supply roads across The Wild Frontier at Monolith (3, 3) to unlock Region 2: The Highlands.",
+        targetTileId: 73,
+        unlocksRegionId: 2,
+        targetAmount: parseUnits("1000", WIF_DECIMALS),
+        totalContributed: 0n,
+        deadline: 0,
+        completed: false,
+        active: true,
+      },
+      {
+        id: 4,
+        title: "The Forgotten Monument",
+        description:
+          "Excavate and restore the ancient obsidian monolith at Skyforge Summit in The Highlands to awaken realm-wide Signal Beacon resonance.",
+        targetTileId: 122,
+        unlocksRegionId: null,
+        targetAmount: parseUnits("1250", WIF_DECIMALS),
+        totalContributed: 0n,
+        deadline: 0,
+        completed: false,
+        active: true,
+      },
+      {
+        id: 5,
+        title: "The Northern Passage",
+        description:
+          "Carve a high-altitude stone causeway through the northern crags to unlock Region 3: The Crossroads for master builders.",
+        targetTileId: 171,
+        unlocksRegionId: 3,
+        targetAmount: parseUnits("1500", WIF_DECIMALS),
+        totalContributed: 0n,
+        deadline: 0,
+        completed: false,
+        active: true,
+      },
+    ];
+
+    if (!isContractDeployed) return defaults;
+
+    return defaults.map((def, idx) => {
+      const raw = batchData?.[24 + idx]?.result as
+        | readonly [
+            string,
+            number,
+            number,
+            bigint,
+            bigint,
+            bigint,
+            boolean,
+            boolean
+          ]
+        | undefined;
+      if (!raw || !raw[0]) return def;
+      const [
+        title,
+        targetWorldTileId,
+        unlocksRegionId,
+        targetAmount,
+        totalContributed,
+        deadline,
+        completed,
+        active,
+      ] = raw;
+      return {
+        id: def.id,
+        title: title || def.title,
+        description: def.description,
+        targetTileId: Number(targetWorldTileId),
+        unlocksRegionId:
+          unlocksRegionId === 255 ? null : Number(unlocksRegionId),
+        targetAmount: targetAmount > 0n ? targetAmount : def.targetAmount,
+        totalContributed,
+        deadline: Number(deadline),
+        completed,
+        active,
+      };
+    });
+  }, [batchData, isContractDeployed]);
 
   const worldEvent: WorldEventState = useMemo(() => {
     if (isContractDeployed && eventRaw) {
@@ -710,9 +1027,19 @@ export function useWorldData(
       settlements,
       structures,
       uniqueBuilders: uniqueBuilders.size,
-      unlockedRegionsCount: isWildFrontierUnlocked ? 2 : 1,
+      unlockedRegionsCount:
+        (isHeartlandsUnlocked ? 1 : 0) +
+        (isWildFrontierUnlocked ? 1 : 0) +
+        (isHighlandsUnlocked ? 1 : 0) +
+        (isCrossroadsUnlocked ? 1 : 0),
     };
-  }, [allPlayableTiles, isWildFrontierUnlocked]);
+  }, [
+    allPlayableTiles,
+    isCrossroadsUnlocked,
+    isHeartlandsUnlocked,
+    isHighlandsUnlocked,
+    isWildFrontierUnlocked,
+  ]);
 
   const computePlayerStatsForAddress = useCallback(
     (addr?: `0x${string}`): PlayerStats => {
@@ -1015,11 +1342,16 @@ export function useWorldData(
     tiles,
     heartlandsTiles,
     frontierTiles,
+    highlandsTiles,
+    crossroadsTiles,
     allPlayableTiles,
     regionUnlockedMap,
     isWildFrontierUnlocked,
+    isHighlandsUnlocked,
+    isCrossroadsUnlocked,
     costs,
     worldEvent,
+    allWorldEvents,
     worldSummary,
     playerStats,
     missions,
