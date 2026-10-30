@@ -33,10 +33,10 @@ interface IsometricWorldMapProps {
 
 const DEFAULT_CAMERA: CameraOrbitState = {
   azimuth: 0.72,    // Classic 3/4 isometric perspective matching Panel 2
-  elevation: 0.68,  // ~39° immersive overlook showing cliffs, trees, mountains & water
-  distance: 27.5,   // Large, immersive framing filling the viewport
+  elevation: 0.65,  // ~37° immersive overlook showing cliffs, trees, mountains & water
+  distance: 28.0,   // Balanced framing filling the entire viewport
   targetX: 0,
-  targetZ: 0.6,
+  targetZ: 0.1,     // Centered framing allowing the southern coast to gracefully cover the lower view
 };
 
 interface PointerSample {
@@ -417,7 +417,7 @@ export function IsometricWorldMap({
     <div
       ref={containerRef}
       className={cn(
-        "relative w-full h-full overflow-hidden select-none bg-[#070A0B]",
+        "relative w-full h-full overflow-hidden select-none bg-[#050C0F]",
         className
       )}
     >

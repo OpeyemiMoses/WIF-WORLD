@@ -171,12 +171,14 @@ function baseTerrainHeightForType(terrain: TerrainType): number {
 
 // Surrounding decorative rocky sea stacks (outside the 7x7 playable territory)
 const SEA_STACKS = [
-  { x: -19.5, z: -11.0, r: 2.8, h: 3.6 },
-  { x: 19.2, z: -9.5, r: 2.5, h: 3.1 },
-  { x: -18.0, z: 12.8, r: 3.1, h: 4.2 },
-  { x: 18.8, z: 13.5, r: 2.7, h: 3.4 },
-  { x: 2.5, z: -20.2, r: 2.4, h: 3.9 },
-  { x: -4.2, z: 19.8, r: 2.9, h: 2.8 },
+  { x: -24.5, z: -14.0, r: 3.2, h: 4.2 },
+  { x: 24.2, z: -12.5, r: 3.0, h: 3.8 },
+  { x: -23.0, z: 16.8, r: 3.2, h: 4.2 },
+  { x: 23.8, z: 17.5, r: 3.0, h: 3.6 },
+  { x: 3.5, z: -26.2, r: 3.1, h: 4.2 },
+  { x: -5.2, z: 27.8, r: 3.3, h: 3.6 },
+  { x: 14.5, z: 26.5, r: 3.0, h: 3.5 },
+  { x: -15.5, z: 27.0, r: 3.1, h: 3.7 },
 ];
 
 /**
@@ -280,7 +282,8 @@ export function sampleIslandSurface(
   const radDist = Math.hypot(wx, wz);
   const continentMetric = boxDist * 0.62 + radDist * 0.38 - coastNoise * 0.52;
 
-  const continentMask = 1.0 - smoothstep(13.6, 17.4, continentMetric);
+  const maxReach = 19.5 + (wz > 0 ? 5.2 : 1.8);
+  const continentMask = 1.0 - smoothstep(14.0, maxReach, continentMetric);
 
   // Micro & macro geological detail
   const rollingNoise = fbm2D(wx * 0.22 + 3.1, wz * 0.22 + 8.4, 4);
@@ -350,8 +353,8 @@ export function buildTileGrid2D(tiles: TileState[]): TileState[][] {
  */
 export function buildSculptedTerrainMesh(tiles: TileState[]): PackedMesh {
   const tileGrid = buildTileGrid2D(tiles);
-  const RES = 176; // 176x176 grid = 30,976 quads = 61,952 triangles
-  const EXTENT = 24.5; // Covers island (-15..+15) + coastal surf + sea stacks
+  const RES = 180; // 180x180 grid = 32,400 quads = 64,800 triangles (smooth 60 FPS)
+  const EXTENT = 29.5; // Seamlessly covers island (-15..+15) + extended southern coast & sea stacks
 
   const heights = new Float32Array((RES + 1) * (RES + 1));
   const biomeCode = new Float32Array((RES + 1) * (RES + 1));
@@ -467,7 +470,7 @@ export function buildSculptedTerrainMesh(tiles: TileState[]): PackedMesh {
 export function buildOceanWaterMesh(tiles: TileState[]): PackedMesh {
   const tileGrid = buildTileGrid2D(tiles);
   const RES = 150;
-  const EXTENT = 38.0; // Wide ocean horizon blending into dark abyssal mist
+  const EXTENT = 60.0; // Wide ocean horizon blending into dark abyssal mist
   const mb = new MeshBuilder();
 
   for (let iz = 0; iz <= RES; iz++) {
@@ -475,7 +478,7 @@ export function buildOceanWaterMesh(tiles: TileState[]): PackedMesh {
     for (let ix = 0; ix <= RES; ix++) {
       const wx = -EXTENT + (ix / RES) * (EXTENT * 2);
       const terrainH =
-        Math.abs(wx) < 24.5 && Math.abs(wz) < 24.5
+        Math.abs(wx) < 29.5 && Math.abs(wz) < 29.5
           ? sampleIslandSurface(wx, wz, tileGrid).height
           : -4.0;
       const waterDepth = WATER_LEVEL - terrainH; // > 0 means underwater

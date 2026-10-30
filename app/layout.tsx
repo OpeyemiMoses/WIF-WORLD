@@ -30,11 +30,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${manrope.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen bg-obsidian font-sans text-ink-primary flex flex-col selection:bg-crimson selection:text-white">
+    <html lang="en" className={`${manrope.variable} ${jetbrainsMono.variable} h-full`}>
+      <body className="h-full min-h-screen bg-obsidian font-sans text-ink-primary flex flex-col selection:bg-crimson selection:text-white">
         <Web3Provider>
           <TopNav />
-          <div className="flex-1 flex flex-col">{children}</div>
+          <div className="flex-1 flex flex-col min-h-0 h-full">{children}</div>
         </Web3Provider>
       </body>
     </html>

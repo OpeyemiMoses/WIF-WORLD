@@ -320,8 +320,8 @@ void main() {
 
   // Distance abyssal fog blend
   float distCam = length(v_worldPos.xz);
-  float fog = smoothstep(19.5, 36.0, distCam);
-  vec3 fogColor = vec3(0.032, 0.044, 0.048);
+  float fog = smoothstep(36.0, 58.0, distCam);
+  vec3 fogColor = vec3(0.016, 0.042, 0.052);
 
   color = acesToneMap(color);
   color = mix(color, fogColor, fog);
@@ -463,8 +463,8 @@ void main() {
   }
 
   float distCam = length(v_worldPos.xz);
-  float fog = smoothstep(20.0, 36.0, distCam);
-  vec3 fogColor = vec3(0.032, 0.044, 0.048);
+  float fog = smoothstep(36.0, 58.0, distCam);
+  vec3 fogColor = vec3(0.016, 0.042, 0.052);
 
   color = acesToneMap(color);
   color = mix(color, fogColor, fog);
@@ -588,12 +588,12 @@ void main() {
   vec3 foamColor = vec3(0.76, 0.86, 0.89) * (0.65 + 0.35 * shadow);
   color = mix(color, foamColor, clamp(foamMask * 0.78, 0.0, 0.88));
 
-  // Distance fog fade into obsidian background (#07090A)
+  // Distance fog fade into abyssal ocean mist
   float distOrigin = length(wp);
-  float horizonFade = smoothstep(18.5, 36.5, distOrigin);
+  float horizonFade = smoothstep(42.0, 64.0, distOrigin);
 
   color = acesToneMap(color);
-  vec3 bgAbyss = vec3(0.030, 0.042, 0.046);
+  vec3 bgAbyss = vec3(0.016, 0.042, 0.052);
   color = mix(color, bgAbyss, horizonFade);
   color = pow(max(color, vec3(0.0)), vec3(1.0 / 2.2));
 

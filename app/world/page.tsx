@@ -202,9 +202,9 @@ export default function WorldScreen() {
   const currentStageInfo = PROGRESSION_STAGES[playerStats.progressionStage];
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row h-[calc(100vh-4rem)] overflow-hidden bg-obsidian">
+    <div className="flex-1 flex flex-col lg:flex-row h-full min-h-0 overflow-hidden bg-obsidian">
       {/* LEFT / CENTER: Interactive 7x7 Isometric World Viewport */}
-      <div className="relative flex-1 min-h-[460px] lg:min-h-0 h-full">
+      <div className="relative flex-1 min-h-[460px] lg:min-h-0 h-full w-full">
         {/* Top-Left Floating HUD: World Briefing & Regional Objective */}
         <div className="absolute left-4 top-4 z-20 w-[290px] sm:w-[332px] rounded-2xl border border-white/[0.1] bg-[#101413]/92 p-4 shadow-panel backdrop-blur-md space-y-2.5">
           <div className="flex items-center justify-between">

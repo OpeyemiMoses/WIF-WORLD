@@ -192,10 +192,10 @@ export class IslandWebGLRenderer {
 
     // Precompute directional sun LightVP matrix covering the island
     const sunLen = Math.hypot(...SUN_DIRECTION);
-    const sx = (SUN_DIRECTION[0] / sunLen) * 34;
-    const sy = (SUN_DIRECTION[1] / sunLen) * 34;
-    const sz = (SUN_DIRECTION[2] / sunLen) * 34;
-    orthoMat4(this.lightProjMat, -22, 22, -22, 22, 4, 72);
+    const sx = (SUN_DIRECTION[0] / sunLen) * 38;
+    const sy = (SUN_DIRECTION[1] / sunLen) * 38;
+    const sz = (SUN_DIRECTION[2] / sunLen) * 38;
+    orthoMat4(this.lightProjMat, -28, 28, -28, 28, 4, 84);
     lookAtMat4(this.lightViewMat, [sx, sy, sz], [0, 0, 0], [0, 1, 0]);
     multiplyMat4(this.lightVPMat, this.lightProjMat, this.lightViewMat);
   }
@@ -435,7 +435,7 @@ export class IslandWebGLRenderer {
     // ========================================================================
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, pixelW, pixelH);
-    gl.clearColor(0.03, 0.042, 0.046, 1.0);
+    gl.clearColor(0.016, 0.042, 0.052, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     gl.activeTexture(gl.TEXTURE0);
