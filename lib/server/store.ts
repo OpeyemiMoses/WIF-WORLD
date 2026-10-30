@@ -87,7 +87,10 @@ interface PersistentStoreData {
   configuredEvents: Record<number, ConfiguredWorldEventMeta>;
 }
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR =
+  process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME
+    ? path.join("/tmp", "wif-worlds-data")
+    : path.join(process.cwd(), "data");
 const STORE_FILE = path.join(DATA_DIR, "wif-worlds-store.json");
 
 const DEFAULT_GREAT_BRIDGE_EVENT: ConfiguredWorldEventMeta = {
