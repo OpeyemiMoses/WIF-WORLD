@@ -202,7 +202,7 @@ export default function WorldScreen() {
   const currentStageInfo = PROGRESSION_STAGES[playerStats.progressionStage];
 
   return (
-    <div className="flex-1 flex flex-col lg:flex-row w-full h-[calc(100dvh-4rem)] min-h-0 overflow-hidden bg-[#050C0F]">
+    <div className="flex-1 flex flex-col lg:flex-row w-full h-full min-h-0 overflow-hidden bg-[#050C0F]">
       {/* LEFT / CENTER: Interactive 7x7 Isometric World Viewport */}
       <div className="relative flex-1 min-h-[380px] lg:min-h-0 h-full w-full overflow-hidden bg-[#050C0F]">
         {/* Top-Left Floating HUD: World Briefing & Regional Objective */}
@@ -480,7 +480,7 @@ export default function WorldScreen() {
           </div>
 
           {/* 5-Stage Personal Civilization Progression Card */}
-          <div className="rounded-xl border border-white/[0.08] bg-[#141918] p-3.5 space-y-2.5">
+          <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/92 backdrop-blur-md shadow-panel p-4 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-crimson-accent">
                 {currentStageInfo.title}
@@ -707,7 +707,7 @@ export default function WorldScreen() {
           </div>
 
           {/* Terrain Rules Info Card */}
-          <div className="rounded-xl border border-white/[0.07] bg-[#141918] p-3.5 space-y-1.5">
+          <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/92 backdrop-blur-md shadow-panel p-4 space-y-1.5">
             <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-muted">
               Terrain & Building Suitability
             </div>

@@ -93,7 +93,7 @@ export function TopNav() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 h-16 w-full border-b border-white/[0.07] bg-[#0B0D0C]/90 backdrop-blur-md">
+      <header className="fixed top-0 left-0 right-0 z-50 h-16 w-full border-b border-white/[0.07] bg-[#0B0D0C]/90 backdrop-blur-md">
         <div className="mx-auto flex h-full max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Left: Brand + Primary Navigation */}
           <div className="flex items-center gap-8 lg:gap-12">

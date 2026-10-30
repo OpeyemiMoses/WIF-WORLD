@@ -277,7 +277,7 @@ export default function WorldEventsPage() {
         {/* BOTTOM TWO-COLUMN SECTION: Recent Contributors + Planned World Phases */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left (7 cols): Verified Onchain Contributors */}
-          <div className="lg:col-span-7 rounded-2xl border border-white/[0.08] bg-[#121615] p-6 space-y-4">
+          <div className="lg:col-span-7 rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-ink-primary">
@@ -355,7 +355,7 @@ export default function WorldEventsPage() {
           </div>
 
           {/* Right (5 cols): Future Regional Objectives Roadmap */}
-          <div className="lg:col-span-5 rounded-2xl border border-white/[0.08] bg-[#121615] p-6 space-y-4">
+          <div className="lg:col-span-5 rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-6 space-y-4">
             <div>
               <h2 className="text-lg font-bold text-ink-primary">
                 Upcoming Events

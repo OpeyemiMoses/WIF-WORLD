@@ -199,7 +199,7 @@ export function PlayerProfileView({
           </div>
         ) : !validTargetAddress ? (
           /* Disconnected Empty Onboarding State (Requirement 8: useful even before playing) */
-          <div className="rounded-3xl border border-white/[0.09] bg-[#121615] p-8 sm:p-12 text-center max-w-2xl mx-auto space-y-5 my-8 shadow-panel">
+          <div className="rounded-3xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md p-8 sm:p-12 text-center max-w-2xl mx-auto space-y-5 my-8 shadow-panel">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-crimson/40 bg-crimson/15 text-crimson-accent shadow-crimson-sm">
               <Wallet className="h-7 w-7" />
             </div>
@@ -302,7 +302,7 @@ export function PlayerProfileView({
               </div>
 
               {/* Right (5 cols): Activity Score + Player Territory Mini-Map (Matches Panel 5!) */}
-              <div className="lg:col-span-5 rounded-2xl border border-white/[0.09] bg-[#121615] p-6 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-panel">
+              <div className="lg:col-span-5 rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md p-6 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-panel">
                 <div className="space-y-3 w-full sm:w-auto flex-1">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-ink-secondary">
                     <span>Activity Score</span>
@@ -353,7 +353,7 @@ export function PlayerProfileView({
             {/* BOTTOM ACTIVITY & ASSETS SECTION — Matches Panel 5 Reference */}
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left (8 cols): Tabs + Verified Feed */}
-              <div className="lg:col-span-8 rounded-2xl border border-white/[0.08] bg-[#121615] p-6 space-y-5">
+              <div className="lg:col-span-8 rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md p-6 space-y-5 shadow-panel">
                 <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.07] pb-3">
                   {(
                     [
@@ -587,7 +587,7 @@ export function PlayerProfileView({
 
               {/* Right (4 cols): Builder Summary & Quick World Entry */}
               <div className="lg:col-span-4 space-y-5">
-                <div className="rounded-2xl border border-white/[0.08] bg-[#121615] p-6 space-y-4">
+                <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md p-6 space-y-4 shadow-panel">
                   <h3 className="text-sm font-bold text-ink-primary">
                     World Impact Summary
                   </h3>
@@ -666,7 +666,7 @@ export function PlayerProfileView({
                 {isConnected && !isOwnProfile && connectedAddress && (
                   <Link
                     href={`/profile/${connectedAddress}`}
-                    className="block rounded-xl border border-white/[0.08] bg-[#121615] px-4 py-3 text-center text-xs font-semibold text-ink-secondary hover:text-white transition-colors"
+                    className="block rounded-xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md px-4 py-3 text-center text-xs font-semibold text-ink-secondary hover:text-white transition-colors shadow-panel"
                   >
                     Switch to My Connected Profile →
                   </Link>

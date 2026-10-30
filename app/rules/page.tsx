@@ -220,9 +220,9 @@ export default function GameRulesPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="rounded-xl border border-white/[0.08] bg-[#121615] p-4 space-y-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.05] text-ink-primary font-mono font-bold text-xs">
-                Step 1
+            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-crimson/40 transition-all">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-crimson/15 text-crimson-accent font-mono font-bold text-xs border border-crimson/30">
+                01
               </div>
               <h3 className="text-sm font-bold text-white">Connect Wallet</h3>
               <p className="text-xs text-ink-muted leading-relaxed">
@@ -231,9 +231,9 @@ export default function GameRulesPage() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-white/[0.08] bg-[#121615] p-4 space-y-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.05] text-ink-primary font-mono font-bold text-xs">
-                Step 2
+            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-crimson/40 transition-all">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-crimson/15 text-crimson-accent font-mono font-bold text-xs border border-crimson/30">
+                02
               </div>
               <h3 className="text-sm font-bold text-white">Acquire $WIF</h3>
               <p className="text-xs text-ink-muted leading-relaxed">
@@ -245,9 +245,9 @@ export default function GameRulesPage() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-white/[0.08] bg-[#121615] p-4 space-y-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.05] text-ink-primary font-mono font-bold text-xs">
-                Step 3
+            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-crimson/40 transition-all">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-crimson/15 text-crimson-accent font-mono font-bold text-xs border border-crimson/30">
+                03
               </div>
               <h3 className="text-sm font-bold text-white">Claim Territory</h3>
               <p className="text-xs text-ink-muted leading-relaxed">
@@ -257,9 +257,9 @@ export default function GameRulesPage() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-white/[0.08] bg-[#121615] p-4 space-y-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.05] text-ink-primary font-mono font-bold text-xs">
-                Step 4
+            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-crimson/40 transition-all">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-crimson/15 text-crimson-accent font-mono font-bold text-xs border border-crimson/30">
+                04
               </div>
               <h3 className="text-sm font-bold text-white">Found Hamlet</h3>
               <p className="text-xs text-ink-muted leading-relaxed">
@@ -287,7 +287,7 @@ export default function GameRulesPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-white/[0.09] bg-[#121615] p-5 space-y-3.5">
+            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel hover:border-crimson/40 transition-all p-5 space-y-3.5">
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-400">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
@@ -308,7 +308,7 @@ export default function GameRulesPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/[0.09] bg-[#121615] p-5 space-y-3.5">
+            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel hover:border-crimson/40 transition-all p-5 space-y-3.5">
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-crimson-accent">
                   <span className="h-2 w-2 rounded-full bg-crimson-accent shadow-[0_0_6px_#FF4D5A]" />
@@ -329,7 +329,7 @@ export default function GameRulesPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/[0.09] bg-[#121615] p-5 space-y-3.5">
+            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel hover:border-crimson/40 transition-all p-5 space-y-3.5">
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-400">
                   <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24]" />
@@ -422,7 +422,7 @@ export default function GameRulesPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-white/[0.09] bg-[#121615]">
+          <div className="overflow-x-auto rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel">
             <table className="w-full text-left text-xs">
               <thead className="border-b border-white/[0.08] bg-obsidian/60 text-ink-muted font-semibold">
                 <tr>
@@ -596,7 +596,7 @@ export default function GameRulesPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.1] bg-[#141918] p-6 sm:p-8 space-y-6">
+          <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-6 sm:p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Slider 1: Settlements */}
               <div className="space-y-2">
@@ -727,8 +727,8 @@ export default function GameRulesPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-white/[0.08] bg-[#121615] p-4 space-y-2.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">
+            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel hover:border-crimson/40 transition-all p-5 space-y-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-crimson-accent">
                 Network Configuration
               </span>
               <div className="space-y-1.5 text-xs text-ink-secondary">
@@ -761,8 +761,8 @@ export default function GameRulesPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/[0.08] bg-[#121615] p-4 space-y-2.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">
+            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel hover:border-crimson/40 transition-all p-5 space-y-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-crimson-accent">
                 Official Token &amp; Treasury
               </span>
               <div className="space-y-1.5 text-xs text-ink-secondary">
@@ -821,7 +821,7 @@ export default function GameRulesPage() {
               return (
                 <div
                   key={idx}
-                  className="rounded-xl border border-white/[0.08] bg-[#121615] overflow-hidden transition-colors"
+                  className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel overflow-hidden transition-all hover:border-crimson/40"
                 >
                   <button
                     type="button"
