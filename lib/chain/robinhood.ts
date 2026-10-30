@@ -12,13 +12,22 @@ export const ROBINHOOD_EXPLORER_URL =
   "https://robinhoodchain.blockscout.com";
 
 function safeChecksumAddress(val?: string | null, fallback?: `0x${string}`): `0x${string}` | null {
-  if (!val) return fallback ?? null;
-  const trimmed = val.trim();
-  if (!/^0x[a-fA-F0-9]{40}$/.test(trimmed)) return fallback ?? null;
+  const target = (val && val.trim().length > 0) ? val.trim() : fallback;
+  if (!target) return null;
+  if (!/^0x[a-fA-F0-9]{40}$/.test(target)) {
+    if (fallback && /^0x[a-fA-F0-9]{40}$/.test(fallback)) {
+      try {
+        return getAddress(fallback.toLowerCase());
+      } catch {
+        return fallback;
+      }
+    }
+    return null;
+  }
   try {
-    return getAddress(trimmed.toLowerCase());
+    return getAddress(target.toLowerCase());
   } catch {
-    return fallback ?? null;
+    return fallback ? (getAddress(fallback.toLowerCase()) as `0x${string}`) : null;
   }
 }
 

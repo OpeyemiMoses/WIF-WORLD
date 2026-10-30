@@ -773,6 +773,13 @@ export interface PlayerStats {
   wood: number;
   stone: number;
   food: number;
+  storedWood: number;
+  storedStone: number;
+  storedFood: number;
+  pendingWood: number;
+  pendingStone: number;
+  pendingFood: number;
+  totalPendingHarvest: number;
   woodPerHour: number;
   stonePerHour: number;
   foodPerHour: number;

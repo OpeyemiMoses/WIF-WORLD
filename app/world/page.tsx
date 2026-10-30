@@ -150,7 +150,22 @@ export default function WorldScreen() {
     harvestStage === "refreshing";
 
   const handleHarvestResources = async () => {
-    await executeGameAction({ action: "harvest" });
+    const ok = await executeGameAction({ action: "harvest" });
+    if (ok) {
+      triggerCelebration(
+        {
+          kind: "settlement",
+          title: "Harvest Collected!",
+          subtitle: "Accrued resources banked into settlement warehouse. Cultivation plot reset to 0 and growing next batch.",
+          rewardChips: [
+            `+${playerStats.woodPerHour}/h Wood`,
+            `+${playerStats.stonePerHour}/h Stone`,
+            `+${playerStats.foodPerHour}/h Food`,
+          ],
+        },
+        3500
+      );
+    }
   };
 
   const activeRegion = REGIONS[activeRegionId] ?? REGIONS[0];
@@ -627,15 +642,30 @@ export default function WorldScreen() {
               onClick={handleHarvestResources}
               disabled={isHarvesting || playerStats.tilesClaimed === 0}
               className={cn(
-                "gamified-btn inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all",
-                playerStats.tilesClaimed > 0
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 hover:bg-emerald-500/30"
-                  : "bg-white/[0.04] text-ink-muted cursor-not-allowed"
+                "gamified-btn inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all",
+                playerStats.tilesClaimed === 0
+                  ? "bg-white/[0.04] text-ink-muted cursor-not-allowed"
+                  : playerStats.totalPendingHarvest > 0
+                  ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/45 hover:bg-emerald-500/35 shadow-[0_0_12px_rgba(16,185,129,0.3)] animate-pulse"
+                  : "bg-emerald-500/10 text-emerald-400/90 border border-emerald-500/25 hover:bg-emerald-500/20"
               )}
-              title="Collect accrued resources into your settlement warehouse"
+              title={
+                playerStats.totalPendingHarvest > 0
+                  ? `Harvest ${playerStats.totalPendingHarvest} resources (+${playerStats.pendingWood} Wood, +${playerStats.pendingStone} Stone, +${playerStats.pendingFood} Food) into your warehouse. Cultivation plot will reset to 0 and begin growing next batch.`
+                  : `Currently cultivating (+${playerStats.woodPerHour + playerStats.stonePerHour + playerStats.foodPerHour}/h: +10 Wood, +5 Stone, +10 Food). Matured units will be harvestable into your warehouse.`
+              }
             >
-              <Sparkles className="h-3 w-3" />
-              <span>{isHarvesting ? "Collecting..." : "Harvest"}</span>
+              {playerStats.totalPendingHarvest > 0 ? (
+                <>
+                  <Sparkles className="h-3 w-3 text-emerald-300" />
+                  <span>{isHarvesting ? "Collecting..." : `Harvest (+${playerStats.totalPendingHarvest})`}</span>
+                </>
+              ) : (
+                <>
+                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span>{isHarvesting ? "Syncing..." : "Cultivating"}</span>
+                </>
+              )}
             </button>
 
             <button
@@ -948,7 +978,7 @@ export default function WorldScreen() {
                   Settlement Materials
                 </span>
                 <span className="ml-2 font-mono text-[10px] text-ink-muted">
-                  Cap {playerStats.storageCap}
+                  Warehouse Cap {playerStats.storageCap}
                 </span>
               </div>
               <button
@@ -956,14 +986,23 @@ export default function WorldScreen() {
                 onClick={handleHarvestResources}
                 disabled={isHarvesting || playerStats.tilesClaimed === 0}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all",
-                  playerStats.tilesClaimed > 0
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 hover:bg-emerald-500/30"
-                    : "bg-white/[0.05] text-ink-muted cursor-not-allowed"
+                  "gamified-btn inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all",
+                  playerStats.tilesClaimed === 0
+                    ? "bg-white/[0.05] text-ink-muted cursor-not-allowed"
+                    : playerStats.totalPendingHarvest > 0
+                    ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/35 shadow-[0_0_12px_rgba(16,185,129,0.25)] animate-pulse"
+                    : "bg-emerald-500/10 text-emerald-400/90 border border-emerald-500/20 hover:bg-emerald-500/20"
                 )}
+                title="Collect all matured cultivation crops into your settlement warehouse. Cultivation plot resets to 0 and grows the next batch."
               >
                 <Sparkles className="h-3 w-3" />
-                <span>{isHarvesting ? "Harvesting..." : "Harvest Now"}</span>
+                <span>
+                  {isHarvesting
+                    ? "Harvesting..."
+                    : playerStats.totalPendingHarvest > 0
+                    ? `Harvest (+${playerStats.totalPendingHarvest})`
+                    : "Harvest Now"}
+                </span>
               </button>
             </div>
 
@@ -979,7 +1018,10 @@ export default function WorldScreen() {
                 <div className="font-mono text-base font-extrabold text-ink-primary mt-0.5">
                   <AnimatedNumber value={Math.floor(playerStats.wood)} />
                 </div>
-                <div className="text-[9px] text-ink-muted">Lumber Camp</div>
+                <div className="flex items-center justify-between text-[9px] text-ink-muted mt-1 pt-1 border-t border-white/[0.06]">
+                  <span>Warehouse: {Math.floor(playerStats.storedWood)}</span>
+                  <span className="text-[#D99B52] font-semibold">+{playerStats.pendingWood} field</span>
+                </div>
               </div>
 
               <div className="rounded-xl border border-slate-400/25 bg-slate-400/10 p-2.5">
@@ -993,7 +1035,10 @@ export default function WorldScreen() {
                 <div className="font-mono text-base font-extrabold text-ink-primary mt-0.5">
                   <AnimatedNumber value={Math.floor(playerStats.stone)} />
                 </div>
-                <div className="text-[9px] text-ink-muted">Quarry</div>
+                <div className="flex items-center justify-between text-[9px] text-ink-muted mt-1 pt-1 border-t border-white/[0.06]">
+                  <span>Warehouse: {Math.floor(playerStats.storedStone)}</span>
+                  <span className="text-slate-300 font-semibold">+{playerStats.pendingStone} field</span>
+                </div>
               </div>
 
               <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-2.5">
@@ -1007,8 +1052,24 @@ export default function WorldScreen() {
                 <div className="font-mono text-base font-extrabold text-ink-primary mt-0.5">
                   <AnimatedNumber value={Math.floor(playerStats.food)} />
                 </div>
-                <div className="text-[9px] text-ink-muted">Farm</div>
+                <div className="flex items-center justify-between text-[9px] text-ink-muted mt-1 pt-1 border-t border-white/[0.06]">
+                  <span>Warehouse: {Math.floor(playerStats.storedFood)}</span>
+                  <span className="text-amber-300 font-semibold">+{playerStats.pendingFood} field</span>
+                </div>
               </div>
+            </div>
+
+            {/* Cultivation status banner */}
+            <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.06] px-2.5 py-1.5 text-[10px] text-ink-muted">
+              <span className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Cultivation active (+25 materials/hour)</span>
+              </span>
+              <span className="text-ink-secondary">
+                {playerStats.totalPendingHarvest > 0
+                  ? `${playerStats.totalPendingHarvest} ready to collect`
+                  : "Plots growing from 0"}
+              </span>
             </div>
           </div>
 

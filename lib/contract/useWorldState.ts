@@ -10,7 +10,7 @@ import {
   useSwitchChain,
   useWriteContract,
 } from "wagmi";
-import { parseUnits } from "viem";
+import { getAddress, isAddress, parseUnits } from "viem";
 import {
   LEGACY_WIF_WORLDS_CONTRACTS,
   ROBINHOOD_CHAIN_ID,
@@ -269,8 +269,23 @@ export function useWorldData(
 ) {
   const publicClient = usePublicClient({ chainId: ROBINHOOD_CHAIN_ID });
   const isContractDeployed = Boolean(WIF_WORLDS_CONTRACT_ADDRESS);
-  const contractAddress = (WIF_WORLDS_CONTRACT_ADDRESS ??
-    ZERO_ADDRESS) as `0x${string}`;
+  const contractAddress = useMemo(() => {
+    if (!WIF_WORLDS_CONTRACT_ADDRESS) return ZERO_ADDRESS as `0x${string}`;
+    try {
+      return getAddress(WIF_WORLDS_CONTRACT_ADDRESS.toLowerCase()) as `0x${string}`;
+    } catch {
+      return WIF_WORLDS_CONTRACT_ADDRESS as `0x${string}`;
+    }
+  }, []);
+
+  const cleanTargetProfileAddress = useMemo(() => {
+    if (!targetProfileAddress || !isAddress(targetProfileAddress)) return undefined;
+    try {
+      return getAddress(targetProfileAddress.toLowerCase()) as `0x${string}`;
+    } catch {
+      return targetProfileAddress;
+    }
+  }, [targetProfileAddress]);
 
   const [nowSec, setNowSec] = useState<number>(() =>
     Math.floor(Date.now() / 1000)
@@ -515,10 +530,10 @@ export function useWorldData(
     address: contractAddress,
     abi: WIF_WORLDS_ABI,
     functionName: "getPlayerState",
-    args: targetProfileAddress ? [targetProfileAddress] : undefined,
+    args: cleanTargetProfileAddress ? [cleanTargetProfileAddress] : undefined,
     chainId: ROBINHOOD_CHAIN_ID,
     query: {
-      enabled: Boolean(isContractDeployed && targetProfileAddress),
+      enabled: Boolean(isContractDeployed && cleanTargetProfileAddress),
     },
   });
 
@@ -1077,6 +1092,13 @@ export function useWorldData(
           wood: 0,
           stone: 0,
           food: 0,
+          storedWood: 0,
+          storedStone: 0,
+          storedFood: 0,
+          pendingWood: 0,
+          pendingStone: 0,
+          pendingFood: 0,
+          totalPendingHarvest: 0,
           woodPerHour: 0,
           stonePerHour: 0,
           foodPerHour: 0,
@@ -1093,8 +1115,8 @@ export function useWorldData(
       if (
         isContractDeployed &&
         playerStateRaw &&
-        targetProfileAddress &&
-        targetProfileAddress.toLowerCase() === lower
+        cleanTargetProfileAddress &&
+        cleanTargetProfileAddress.toLowerCase() === lower
       ) {
         const s = playerStateRaw as {
           tilesClaimed: number;
@@ -1134,18 +1156,19 @@ export function useWorldData(
         const stonePerHour = Number(s.stonePerHour ?? 0);
         const foodPerHour = Number(s.foodPerHour ?? 0);
 
-        const wood = Math.min(
-          storageCap,
-          Number(s.wood ?? 0) + (elapsed * woodPerHour) / 3600
-        );
-        const stone = Math.min(
-          storageCap,
-          Number(s.stone ?? 0) + (elapsed * stonePerHour) / 3600
-        );
-        const food = Math.min(
-          storageCap,
-          Number(s.food ?? 0) + (elapsed * foodPerHour) / 3600
-        );
+        const storedWood = Math.min(storageCap, Number(s.wood ?? 0));
+        const storedStone = Math.min(storageCap, Number(s.stone ?? 0));
+        const storedFood = Math.min(storageCap, Number(s.food ?? 0));
+
+        // Cultivation crops accrued in fields since last harvest
+        const pendingWood = Math.floor((elapsed * woodPerHour) / 3600);
+        const pendingStone = Math.floor((elapsed * stonePerHour) / 3600);
+        const pendingFood = Math.floor((elapsed * foodPerHour) / 3600);
+        const totalPendingHarvest = pendingWood + pendingStone + pendingFood;
+
+        const wood = Math.min(storageCap, storedWood + pendingWood);
+        const stone = Math.min(storageCap, storedStone + pendingStone);
+        const food = Math.min(storageCap, storedFood + pendingFood);
 
         const base = {
           tilesClaimed: Number(s.tilesClaimed),
@@ -1164,6 +1187,13 @@ export function useWorldData(
           wood,
           stone,
           food,
+          storedWood,
+          storedStone,
+          storedFood,
+          pendingWood,
+          pendingStone,
+          pendingFood,
+          totalPendingHarvest,
           woodPerHour,
           stonePerHour,
           foodPerHour,
@@ -1247,6 +1277,13 @@ export function useWorldData(
         wood: 0,
         stone: 0,
         food: 0,
+        storedWood: 0,
+        storedStone: 0,
+        storedFood: 0,
+        pendingWood: 0,
+        pendingStone: 0,
+        pendingFood: 0,
+        totalPendingHarvest: 0,
         woodPerHour: rates.woodPerHour,
         stonePerHour: rates.stonePerHour,
         foodPerHour: rates.foodPerHour,
@@ -1264,6 +1301,7 @@ export function useWorldData(
     [
       activities,
       allPlayableTiles,
+      cleanTargetProfileAddress,
       isContractDeployed,
       nowSec,
       playerStateRaw,
@@ -1413,9 +1451,18 @@ export function useWorldActionExecutor(
     );
   };
 
+  const safeContractAddress = useMemo(() => {
+    if (!WIF_WORLDS_CONTRACT_ADDRESS) return null;
+    try {
+      return getAddress(WIF_WORLDS_CONTRACT_ADDRESS.toLowerCase()) as `0x${string}`;
+    } catch {
+      return WIF_WORLDS_CONTRACT_ADDRESS as `0x${string}`;
+    }
+  }, []);
+
   const approveExactWif = useCallback(
     async (requiredAmount: bigint) => {
-      if (!WIF_WORLDS_CONTRACT_ADDRESS || !publicClient) {
+      if (!safeContractAddress || !publicClient) {
         setStage("failed");
         setErrorMessage(
           "WIFWorlds contract is not yet deployed on Robinhood Chain."
@@ -1433,7 +1480,7 @@ export function useWorldActionExecutor(
           address: WIF_TOKEN_ADDRESS,
           abi: ERC20_ABI,
           functionName: "approve",
-          args: [WIF_WORLDS_CONTRACT_ADDRESS, requiredAmount],
+          args: [safeContractAddress, requiredAmount],
           chainId: ROBINHOOD_CHAIN_ID,
         });
 
@@ -1466,7 +1513,7 @@ export function useWorldActionExecutor(
         return false;
       }
     },
-    [onSuccessRefresh, publicClient, writeContractAsync]
+    [onSuccessRefresh, publicClient, safeContractAddress, writeContractAsync]
   );
 
   const executeGameAction = useCallback(
@@ -1479,7 +1526,7 @@ export function useWorldActionExecutor(
         | { action: "event"; eventId: number; amount: bigint }
         | { action: "harvest" }
     ) => {
-      if (!WIF_WORLDS_CONTRACT_ADDRESS || !publicClient) {
+      if (!safeContractAddress || !publicClient) {
         setStage("failed");
         setErrorMessage(
           "WIFWorlds contract is awaiting deployment on Robinhood Chain."
@@ -1497,7 +1544,7 @@ export function useWorldActionExecutor(
 
         if (params.action === "harvest") {
           hash = await writeContractAsync({
-            address: WIF_WORLDS_CONTRACT_ADDRESS,
+            address: safeContractAddress,
             abi: WIF_WORLDS_ABI,
             functionName: "harvestResources",
             args: [],
@@ -1505,7 +1552,7 @@ export function useWorldActionExecutor(
           });
         } else if (params.action === "claim") {
           hash = await writeContractAsync({
-            address: WIF_WORLDS_CONTRACT_ADDRESS,
+            address: safeContractAddress,
             abi: WIF_WORLDS_ABI,
             functionName: "claimTile",
             args: [BigInt(params.tileId)],
@@ -1513,7 +1560,7 @@ export function useWorldActionExecutor(
           });
         } else if (params.action === "settlement") {
           hash = await writeContractAsync({
-            address: WIF_WORLDS_CONTRACT_ADDRESS,
+            address: safeContractAddress,
             abi: WIF_WORLDS_ABI,
             functionName: "buildSettlement",
             args: [BigInt(params.tileId)],
@@ -1521,7 +1568,7 @@ export function useWorldActionExecutor(
           });
         } else if (params.action === "upgrade") {
           hash = await writeContractAsync({
-            address: WIF_WORLDS_CONTRACT_ADDRESS,
+            address: safeContractAddress,
             abi: WIF_WORLDS_ABI,
             functionName: "upgradeSettlement",
             args: [BigInt(params.tileId)],
@@ -1529,7 +1576,7 @@ export function useWorldActionExecutor(
           });
         } else if (params.action === "structure") {
           hash = await writeContractAsync({
-            address: WIF_WORLDS_CONTRACT_ADDRESS,
+            address: safeContractAddress,
             abi: WIF_WORLDS_ABI,
             functionName: "buildStructure",
             args: [BigInt(params.tileId), params.structureType],
@@ -1537,7 +1584,7 @@ export function useWorldActionExecutor(
           });
         } else {
           hash = await writeContractAsync({
-            address: WIF_WORLDS_CONTRACT_ADDRESS,
+            address: safeContractAddress,
             abi: WIF_WORLDS_ABI,
             functionName: "contributeToEvent",
             args: [BigInt(params.eventId), params.amount],
@@ -1578,7 +1625,7 @@ export function useWorldActionExecutor(
         return false;
       }
     },
-    [onSuccessRefresh, publicClient, writeContractAsync]
+    [onSuccessRefresh, publicClient, safeContractAddress, writeContractAsync]
   );
 
   return {
