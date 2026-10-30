@@ -21,11 +21,13 @@ import {
   Layers,
   Lock,
   MapPin,
+  Mountain,
   RefreshCw,
   Scale,
   Shield,
   ShieldCheck,
   Sparkles,
+  Trees,
   TrendingUp,
   Unlock,
   Users,
@@ -518,32 +520,35 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          {/* 3 Settlement Evolution Cards */}
+          {/* 3 In-Game Resources (Phase 1.1 Economy) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                tier: "Tier 1",
-                name: "Hamlet Hall",
-                cost: "25 $WIF",
-                material: "Heavy timber posts, thatch roof, stone hearth",
-                benefit: "Founds territorial presence; unlocks basic tile claim projection.",
-                icon: Castle,
+                tier: "In-Game Resource • Construction",
+                name: "Wood (Lumber Camp)",
+                cost: "+45 Wood/hr on Forest",
+                material: "Felled timber logs & sawmill planks",
+                benefit:
+                  "Primary construction material for Quarries, Farms, Outposts, Workshops, and Settlement upgrades.",
+                icon: Trees,
               },
               {
-                tier: "Tier 2",
-                name: "Fortified Stronghold",
-                cost: "75 $WIF",
-                material: "Mortared fieldstone, crenellated towers, banner pennants",
-                benefit: "Expands claim capacity by +2; enables construction of workshops.",
-                icon: Shield,
+                tier: "In-Game Resource • Advanced",
+                name: "Stone (Quarry)",
+                cost: "+40 Stone/hr on Crags & Hills",
+                material: "Cut granite & highland obsidian masonry",
+                benefit:
+                  "Required for Artisan Workshops, Signal Beacons, and upgrading Settlements from Level 2 to Level 5.",
+                icon: Mountain,
               },
               {
-                tier: "Tier 3",
-                name: "Sovereign Citadel",
-                cost: "175 $WIF",
-                material: "Cut ashlar granite, high spires, golden eagle weather-vane",
-                benefit: "Peak regional dominance; fulfills requirements for founding 3rd settlement.",
-                icon: Crown,
+                tier: "In-Game Resource • Development",
+                name: "Food (Farm)",
+                cost: "+45 Food/hr on Plains",
+                material: "Golden heartland wheat & granary stores",
+                benefit:
+                  "Sustains logging crews, supports Signal Beacons, and fuels all 5 Settlement Level upgrades.",
+                icon: Sparkles,
               },
             ].map((arch) => {
               const Icon = arch.icon;
@@ -556,24 +561,24 @@ export default function LandingPage() {
                     <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-crimson/35 bg-crimson/15 text-crimson-accent">
                       <Icon className="h-5 w-5" />
                     </span>
-                    <span className="font-mono text-xs font-semibold text-crimson-accent">
+                    <span className="font-mono text-xs font-semibold text-emerald-400">
                       {arch.cost}
                     </span>
                   </div>
 
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-ink-dim">
-                      {arch.tier} Settlement
+                      {arch.tier}
                     </span>
                     <h3 className="text-lg font-bold text-ink-primary">{arch.name}</h3>
                   </div>
 
                   <div className="space-y-2 text-xs">
                     <p className="text-ink-secondary">
-                      <strong className="text-ink-primary">Materials:</strong> {arch.material}
+                      <strong className="text-ink-primary">Output:</strong> {arch.material}
                     </p>
                     <p className="text-ink-muted">
-                      <strong className="text-ink-primary">Tactical Benefit:</strong> {arch.benefit}
+                      <strong className="text-ink-primary">Gameplay Function:</strong> {arch.benefit}
                     </p>
                   </div>
                 </div>
@@ -581,55 +586,109 @@ export default function LandingPage() {
             })}
           </div>
 
-          {/* 4 Specialized Structure Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* 5 Settlement Levels Banner */}
+          <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 p-6 backdrop-blur-md shadow-panel space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-crimson-accent">
+                  5-Level Settlement Progression
+                </span>
+                <h3 className="text-lg font-bold text-ink-primary">
+                  Every Settlement Evolves Across 5 Distinct Tiers
+                </h3>
+              </div>
+              <span className="font-mono text-xs text-ink-muted">
+                Requires $WIF + Wood, Stone &amp; Food
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
+              {[
+                { lvl: "Level 1", title: "Settlement Hall", unlock: "Basic structures & +3 Territory Cap" },
+                { lvl: "Level 2", title: "Homestead Keep", unlock: "More building slots & +150 Storage" },
+                { lvl: "Level 3", title: "Stronghold Citadel", unlock: "Advanced production (+25W/+20S/+25F/hr)" },
+                { lvl: "Level 4", title: "Grand Fortress", unlock: "Expansion settlement mastery (+35/hr)" },
+                { lvl: "Level 5", title: "Sovereign Capital", unlock: "Regional projects leadership (+50/hr)" },
+              ].map((t) => (
+                <div
+                  key={t.lvl}
+                  className="rounded-xl border border-white/[0.07] bg-obsidian/70 p-3.5 space-y-1"
+                >
+                  <div className="font-mono text-[11px] font-bold text-crimson-accent">
+                    {t.lvl}
+                  </div>
+                  <div className="font-bold text-ink-primary">{t.title}</div>
+                  <div className="text-[11px] text-ink-muted leading-snug">
+                    {t.unlock}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 6 Production & Strategic Structure Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               {
-                name: "Frontier Outpost",
-                cost: "12 $WIF",
-                icon: Compass,
-                badge: "Territory Booster",
-                desc: "Border watchtower that immediately adds +2 tiles to your max claimable territory capacity.",
+                name: "Lumber Camp",
+                cost: "10 $WIF + 15 Food",
+                icon: Trees,
+                badge: "Produces Wood",
+                desc: "Timber sawmill generating +45 Wood/hr on Forest tiles (+30/hr on Plains/Hills) plus +25 instant Wood.",
+              },
+              {
+                name: "Quarry",
+                cost: "12.5 $WIF + 20 Wood",
+                icon: Mountain,
+                badge: "Produces Stone",
+                desc: "Excavation pit & crane generating +40 Stone/hr on Rocky Crags & Hills (+25/hr on Plains).",
+              },
+              {
+                name: "Farm",
+                cost: "10 $WIF + 15 Wood",
+                icon: Sparkles,
+                badge: "Produces Food",
+                desc: "Irrigated golden wheat fields generating +45 Food/hr on Plains (+30/hr on Forest/Hills).",
               },
               {
                 name: "Artisan Workshop",
-                cost: "18 $WIF",
+                cost: "18.75 $WIF + 35W/25S",
                 icon: Hammer,
-                badge: "Crafting Hall",
-                desc: "Masonry and forge facility; mandatory prerequisite for upgrading to a Tier 3 Citadel.",
+                badge: "Uses Materials",
+                desc: "Processes materials for advanced construction, adds +150 Storage Cap, and unlocks Level 3+ Strongholds.",
+              },
+              {
+                name: "Frontier Outpost",
+                cost: "12.5 $WIF + 20 Wood",
+                icon: Compass,
+                badge: "+2 Territory Cap",
+                desc: "Border watchtower that immediately adds +2 tiles to your max claimable territory capacity.",
               },
               {
                 name: "Signal Beacon",
-                cost: "Community",
+                cost: "31.25 $WIF + 40S/20F",
                 icon: Flame,
-                badge: "Realm Unlock",
-                desc: "Monument channeling communal builder power to permanently unlock Region 1: The Wild Frontier.",
-              },
-              {
-                name: "Ancient Landmark",
-                cost: "Sacred",
-                icon: Sparkles,
-                badge: "Neutral Relic",
-                desc: "Pre-existing sacred ruins with eternal monuments radiating regional prestige across the map.",
+                badge: "Regional Relay",
+                desc: "High-elevation relay linking your settlement network to Regional Projects and unlocking Level 5 Capitals.",
               },
             ].map((st) => {
               const Icon = st.icon;
               return (
                 <div
                   key={st.name}
-                  className="rounded-2xl border border-white/[0.08] bg-[#111514]/70 p-5 backdrop-blur-md shadow-panel space-y-3 hover:border-white/20 transition-all"
+                  className="rounded-2xl border border-white/[0.08] bg-[#111514]/88 p-5 backdrop-blur-md shadow-panel space-y-3 hover:border-crimson/40 transition-all"
                 >
                   <div className="flex items-center justify-between">
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-crimson-accent">
                       <Icon className="h-4 w-4" />
                     </span>
-                    <span className="font-mono text-xs text-ink-dim font-medium">
+                    <span className="font-mono text-xs text-crimson-accent font-semibold">
                       {st.cost}
                     </span>
                   </div>
 
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-crimson-accent">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
                       {st.badge}
                     </span>
                     <h4 className="text-sm font-bold text-ink-primary">{st.name}</h4>

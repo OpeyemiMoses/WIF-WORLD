@@ -7,15 +7,22 @@ import {
   AlertTriangle,
   ArrowUpCircle,
   Castle,
+  CheckCircle2,
   ChevronRight,
   Compass,
+  Eye,
   ExternalLink,
   Flag,
   Flame,
   Hammer,
-  Info,
   Lock,
+  Mountain,
   RefreshCw,
+  Sparkles,
+  Target,
+  Trees,
+  Trophy,
+  Wheat,
   X,
 } from "lucide-react";
 import { IsometricWorldMap } from "@/components/world/IsometricWorldMap";
@@ -24,6 +31,7 @@ import { BuildActionModal } from "@/components/build/BuildActionModal";
 import { WifTokenEmblem } from "@/components/brand/WifWorldsLogo";
 import {
   useRobinhoodWallet,
+  useWorldActionExecutor,
   useWorldData,
 } from "@/lib/contract/useWorldState";
 import { explorerAddressUrl, explorerTxUrl } from "@/lib/chain/robinhood";
@@ -34,23 +42,22 @@ import {
   getRegionLabel,
   getWorldTileId,
   manhattanDistance,
+  MAX_SETTLEMENT_LEVEL,
   MAX_SETTLEMENTS_PER_REGION,
   MIN_SETTLEMENT_MANHATTAN_DISTANCE,
   PROGRESSION_STAGES,
   REGIONS,
   SETTLEMENT_TIER_META,
+  SettlementLevel,
   STRUCTURE_META,
   StructureType,
   TERRAIN_META,
   WorldActionKind,
   ZERO_ADDRESS,
 } from "@/lib/game/worldData";
-import {
-  cn,
-  formatCountdown,
-  formatWif,
-  shortenAddress,
-} from "@/lib/utils";
+import { cn, formatWif, shortenAddress } from "@/lib/utils";
+
+type HudDrawerTab = "feed" | "missions" | "rankings" | null;
 
 export default function WorldScreen() {
   const [activeRegionId, setActiveRegionId] = useState<number>(0);
@@ -59,31 +66,57 @@ export default function WorldScreen() {
   const [buildModalOpen, setBuildModalOpen] = useState(false);
   const [buildModalInitialAction, setBuildModalInitialAction] =
     useState<WorldActionKind>("claim");
-  const [activityDrawerOpen, setActivityDrawerOpen] = useState(false);
+  const [activeDrawer, setActiveDrawer] = useState<HudDrawerTab>(null);
+  const [visitedBuilderAddress, setVisitedBuilderAddress] = useState<
+    `0x${string}` | null
+  >(null);
 
-  const { address } = useRobinhoodWallet();
+  const { address, effectivePlayerAddress } = useRobinhoodWallet();
   const {
     isContractDeployed,
     contractAddress,
     treasuryAddress,
+    effectiveProfileAddress,
     tiles,
+    allPlayableTiles,
     regionUnlockedMap,
     costs,
     worldEvent,
     worldSummary,
     playerStats,
+    missions,
+    regionalRankings,
+    computePlayerStatsForAddress,
     activities,
     isLoadingWorld,
     isWorldReadError,
     refreshAllWorldState,
   } = useWorldData(address, activeRegionId);
 
+  const activePlayerAddr = isContractDeployed
+    ? address
+    : effectivePlayerAddress;
+
+  const { stage: harvestStage, executeGameAction } = useWorldActionExecutor(
+    refreshAllWorldState,
+    activePlayerAddr
+  );
+
+  const isHarvesting =
+    harvestStage === "awaiting_wallet" ||
+    harvestStage === "pending" ||
+    harvestStage === "submitted" ||
+    harvestStage === "refreshing";
+
+  const handleHarvestResources = async () => {
+    await executeGameAction({ action: "harvest" });
+  };
+
   const activeRegion = REGIONS[activeRegionId] ?? REGIONS[0];
   const isCurrentRegionUnlocked = Boolean(regionUnlockedMap[activeRegionId]);
 
   const handleSelectRegion = (regionId: number) => {
     setActiveRegionId(regionId);
-    // Focus center/default tile in that region
     setSelectedTileId(getWorldTileId(regionId, regionId === 0 ? 31 : 24));
   };
 
@@ -97,16 +130,46 @@ export default function WorldScreen() {
     !selectedTile.owner || selectedTile.owner.toLowerCase() === ZERO_ADDRESS;
   const isYours =
     !isUnowned &&
-    Boolean(address) &&
-    selectedTile.owner.toLowerCase() === address?.toLowerCase();
+    Boolean(activePlayerAddr) &&
+    selectedTile.owner.toLowerCase() === activePlayerAddr?.toLowerCase();
 
   const playerRegionSettlements = useMemo(() => {
-    if (!address) return [];
-    const lower = address.toLowerCase();
+    if (!activePlayerAddr) return [];
+    const lower = activePlayerAddr.toLowerCase();
     return tiles.filter(
       (t) => t.owner.toLowerCase() === lower && t.settlementLevel > 0
     );
-  }, [address, tiles]);
+  }, [activePlayerAddr, tiles]);
+
+  const visitedBuilderStats = useMemo(() => {
+    if (!visitedBuilderAddress) return null;
+    return computePlayerStatsForAddress(visitedBuilderAddress);
+  }, [computePlayerStatsForAddress, visitedBuilderAddress]);
+
+  const visitedBuilderRanking = useMemo(() => {
+    if (!visitedBuilderAddress) return null;
+    return (
+      regionalRankings.find(
+        (r) => r.address.toLowerCase() === visitedBuilderAddress.toLowerCase()
+      ) ?? null
+    );
+  }, [regionalRankings, visitedBuilderAddress]);
+
+  const handleVisitRealm = (builderAddr: `0x${string}`) => {
+    setVisitedBuilderAddress(builderAddr);
+    const builderTile = allPlayableTiles.find(
+      (t) =>
+        t.owner.toLowerCase() === builderAddr.toLowerCase() &&
+        t.settlementLevel > 0
+    ) ??
+      allPlayableTiles.find(
+        (t) => t.owner.toLowerCase() === builderAddr.toLowerCase()
+      );
+    if (builderTile) {
+      setActiveRegionId(builderTile.regionId);
+      setSelectedTileId(builderTile.id);
+    }
+  };
 
   const eventProgressRatio = useMemo(() => {
     if (worldEvent.targetAmount <= 0n) return 0;
@@ -121,14 +184,13 @@ export default function WorldScreen() {
     setBuildModalOpen(true);
   };
 
-  // Exact prerequisite explanations on sidebar
   const claimDisabledReason = !isCurrentRegionUnlocked
     ? "Region locked until Build the Beacon completes"
     : !terrain.claimable
     ? `${terrain.name} cannot be privately claimed`
     : !isUnowned
     ? isYours
-      ? "Already owned by your wallet"
+      ? "Already owned by your civilization"
       : `Claimed by ${shortenAddress(selectedTile.owner)}`
     : playerStats.tilesClaimed >= playerStats.maxClaimableTiles
     ? `Territory cap full (${playerStats.tilesClaimed}/${playerStats.maxClaimableTiles}) — build Settlement or Outpost`
@@ -154,7 +216,7 @@ export default function WorldScreen() {
         playerStats.structuresBuilt < 2 ||
         playerStats.tilesClaimed < 3)
     ) {
-      return "2nd Settlement needs Lv.2 Stronghold + 2 structures + 3 tiles";
+      return "2nd Settlement needs Lv.2 Keep + 2 structures + 3 tiles";
     }
     if (
       playerStats.settlementsBuilt >= 2 &&
@@ -162,7 +224,7 @@ export default function WorldScreen() {
         playerStats.structuresBuilt < 4 ||
         playerStats.eventsContributedCount < 1)
     ) {
-      return "3rd Settlement needs Lv.3 Citadel + 4 structures + Event contribution";
+      return "3rd Settlement needs Lv.3 Stronghold + 4 structures + Event contribution";
     }
     return null;
   }, [
@@ -175,17 +237,29 @@ export default function WorldScreen() {
     selectedTile.settlementLevel,
   ]);
 
+  const nextLevelForSelectedTile = Math.min(
+    MAX_SETTLEMENT_LEVEL,
+    Math.max(2, selectedTile.settlementLevel + 1)
+  ) as SettlementLevel;
+
   const upgradeDisabledReason = !isCurrentRegionUnlocked
     ? "Region locked"
     : !isYours || selectedTile.settlementLevel === 0
     ? "Requires an owned Settlement Hall on this tile"
-    : selectedTile.settlementLevel >= 3
-    ? "Maximum Citadel tier (Lv. 3) reached"
+    : selectedTile.settlementLevel >= MAX_SETTLEMENT_LEVEL
+    ? "Maximum Sovereign Capital tier (Lv. 5) reached"
     : selectedTile.settlementLevel === 1 &&
       (playerStats.tilesClaimed < 2 || playerStats.structuresBuilt < 1)
-    ? "Lv. 2 Stronghold requires ≥ 2 claimed tiles & ≥ 1 structure"
+    ? "Lv. 2 Keep requires ≥ 2 claimed tiles & ≥ 1 structure"
     : selectedTile.settlementLevel === 2 && playerStats.workshopsBuilt < 1
-    ? "Lv. 3 Citadel requires ≥ 1 active Workshop"
+    ? "Lv. 3 Stronghold requires ≥ 1 active Workshop"
+    : selectedTile.settlementLevel === 3 &&
+      (playerStats.structuresBuilt < 3 || playerStats.tilesClaimed < 4)
+    ? "Lv. 4 Fortress requires ≥ 4 tiles & ≥ 3 structures"
+    : selectedTile.settlementLevel === 4 &&
+      playerStats.beaconsBuilt < 1 &&
+      playerStats.eventsContributedCount < 1
+    ? "Lv. 5 Sovereign Capital requires Signal Beacon or Regional Event contribution"
     : null;
 
   const structureDisabledReason = !isCurrentRegionUnlocked
@@ -200,20 +274,21 @@ export default function WorldScreen() {
 
   const nextSettlementCost = getNextSettlementCost(playerStats.settlementsBuilt);
   const currentStageInfo = PROGRESSION_STAGES[playerStats.progressionStage];
+  const completedMissionsCount = missions.filter((m) => m.completed).length;
 
   return (
     <div className="flex-1 flex flex-col lg:flex-row w-full h-full min-h-0 overflow-hidden bg-[#050C0F]">
       {/* LEFT / CENTER: Interactive 7x7 Isometric World Viewport */}
       <div className="relative flex-1 min-h-[380px] lg:min-h-0 h-full w-full overflow-hidden bg-[#050C0F]">
-        {/* Top-Left Floating HUD: World Briefing & Regional Objective */}
-        <div className="absolute left-4 top-4 z-20 w-[290px] sm:w-[332px] rounded-2xl border border-white/[0.1] bg-[#101413]/92 p-4 shadow-panel backdrop-blur-md space-y-2.5">
+        {/* Top-Left Floating HUD: World Briefing + Multiplayer Tabs (Feed / Missions / Rankings) */}
+        <div className="absolute left-4 top-4 z-20 w-[296px] sm:w-[344px] rounded-2xl border border-white/[0.1] bg-[#101413]/92 p-4 shadow-panel backdrop-blur-md space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-crimson-accent">
               <span className="h-2 w-2 rounded-full bg-crimson-accent animate-pulse shadow-[0_0_8px_#FF4D5A]" />
               <span>
                 {worldEvent.completed
                   ? "Milestone Unlocked"
-                  : "World Briefing • Active Objective"}
+                  : "Regional Project • Active"}
               </span>
             </div>
             <button
@@ -241,14 +316,6 @@ export default function WorldScreen() {
             </Link>
           </div>
 
-          <p className="text-[11px] leading-snug text-ink-muted">
-            Completing this monument unlocks{" "}
-            <span className="font-semibold text-ink-primary">
-              Region 1: The Wild Frontier
-            </span>{" "}
-            (49 new tiles) for all players.
-          </p>
-
           {/* Progress Bar */}
           <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.08]">
             <div
@@ -268,18 +335,66 @@ export default function WorldScreen() {
               {formatWif(worldEvent.totalContributed, 0)} /{" "}
               {formatWif(worldEvent.targetAmount, 0)} $WIF
             </span>
+            <span className="font-mono text-[10px] text-ink-muted">
+              Unlocks Wild Frontier
+            </span>
+          </div>
+
+          {/* 3-Tab Multiplayer & Missions Bar */}
+          <div className="grid grid-cols-3 gap-1 pt-1 border-t border-white/[0.07]">
             <button
               type="button"
-              onClick={() => setActivityDrawerOpen((v) => !v)}
-              className="inline-flex items-center gap-1 font-semibold text-ink-secondary hover:text-crimson-accent transition-colors"
+              onClick={() =>
+                setActiveDrawer((cur) => (cur === "missions" ? null : "missions"))
+              }
+              className={cn(
+                "inline-flex items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold transition-all",
+                activeDrawer === "missions"
+                  ? "bg-crimson text-white shadow-crimson-sm"
+                  : "bg-white/[0.04] text-ink-secondary hover:text-white"
+              )}
+            >
+              <Target className="h-3 w-3" />
+              <span>
+                Missions ({completedMissionsCount}/{missions.length})
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setActiveDrawer((cur) => (cur === "rankings" ? null : "rankings"))
+              }
+              className={cn(
+                "inline-flex items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold transition-all",
+                activeDrawer === "rankings"
+                  ? "bg-crimson text-white shadow-crimson-sm"
+                  : "bg-white/[0.04] text-ink-secondary hover:text-white"
+              )}
+            >
+              <Trophy className="h-3 w-3" />
+              <span>Rankings ({regionalRankings.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setActiveDrawer((cur) => (cur === "feed" ? null : "feed"))
+              }
+              className={cn(
+                "inline-flex items-center justify-center gap-1 rounded-lg py-1.5 px-2 text-[11px] font-semibold transition-all",
+                activeDrawer === "feed"
+                  ? "bg-crimson text-white shadow-crimson-sm"
+                  : "bg-white/[0.04] text-ink-secondary hover:text-white"
+              )}
             >
               <Activity className="h-3 w-3" />
-              <span>World Feed ({activities.length})</span>
+              <span>Feed ({activities.length})</span>
             </button>
           </div>
         </div>
 
-        {/* Top-Center Region Switcher + World Summary Pill */}
+        {/* Top-Center Region Switcher + Live Resource Economy Bar */}
         <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 top-4 z-20 flex-col items-center gap-2">
           <div className="flex items-center gap-1 rounded-xl border border-white/[0.1] bg-[#101413]/92 p-1 backdrop-blur-md shadow-panel">
             {REGIONS.filter((r) => r.mvpPlayable).map((reg) => {
@@ -314,32 +429,74 @@ export default function WorldScreen() {
             </span>
           </div>
 
-          <div className="hidden xl:flex items-center gap-4 rounded-xl border border-white/[0.08] bg-[#101413]/88 px-3.5 py-1.5 text-[11px] backdrop-blur-md">
-            <span className="text-ink-muted">
-              Claimed:{" "}
-              <strong className="font-mono text-ink-primary">
-                {worldSummary.claimedTiles}
-              </strong>
-            </span>
-            <span className="h-3 w-px bg-white/10" />
-            <span className="text-ink-muted">
-              Settlements:{" "}
-              <strong className="font-mono text-ink-primary">
-                {worldSummary.settlements}
-              </strong>
-            </span>
-            <span className="h-3 w-px bg-white/10" />
-            <span className="text-ink-muted">
-              Structures:{" "}
-              <strong className="font-mono text-ink-primary">
-                {worldSummary.structures}
-              </strong>
-            </span>
+          {/* Live In-Game Resource Ticker Pill (Wood, Stone, Food + Harvest CTA) */}
+          <div className="flex items-center gap-3 rounded-xl border border-white/[0.1] bg-[#101413]/92 px-3.5 py-1.5 text-xs backdrop-blur-md shadow-panel">
+            <div
+              className="flex items-center gap-1.5"
+              title="Wood — Construction Material (Produced by Lumber Camps)"
+            >
+              <Trees className="h-3.5 w-3.5 text-[#D99B52]" />
+              <span className="font-mono font-bold text-ink-primary">
+                {Math.floor(playerStats.wood)}
+              </span>
+              <span className="font-mono text-[10px] text-[#D99B52]">
+                +{playerStats.woodPerHour}/h
+              </span>
+            </div>
+
+            <span className="h-3.5 w-px bg-white/10" />
+
+            <div
+              className="flex items-center gap-1.5"
+              title="Stone — Advanced Buildings (Produced by Quarries)"
+            >
+              <Mountain className="h-3.5 w-3.5 text-slate-300" />
+              <span className="font-mono font-bold text-ink-primary">
+                {Math.floor(playerStats.stone)}
+              </span>
+              <span className="font-mono text-[10px] text-slate-300">
+                +{playerStats.stonePerHour}/h
+              </span>
+            </div>
+
+            <span className="h-3.5 w-px bg-white/10" />
+
+            <div
+              className="flex items-center gap-1.5"
+              title="Food — Settlement Development (Produced by Farms)"
+            >
+              <Wheat className="h-3.5 w-3.5 text-amber-400" />
+              <span className="font-mono font-bold text-ink-primary">
+                {Math.floor(playerStats.food)}
+              </span>
+              <span className="font-mono text-[10px] text-amber-400">
+                +{playerStats.foodPerHour}/h
+              </span>
+            </div>
+
+            <span className="h-3.5 w-px bg-white/10" />
+
+            <button
+              type="button"
+              onClick={handleHarvestResources}
+              disabled={isHarvesting || playerStats.tilesClaimed === 0}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all",
+                playerStats.tilesClaimed > 0
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 hover:bg-emerald-500/30"
+                  : "bg-white/[0.04] text-ink-muted cursor-not-allowed"
+              )}
+              title="Collect accrued resources into your settlement warehouse"
+            >
+              <Sparkles className="h-3 w-3" />
+              <span>{isHarvesting ? "Collecting..." : "Harvest"}</span>
+            </button>
+
             <button
               type="button"
               onClick={refreshAllWorldState}
               className="text-ink-muted hover:text-white transition-colors"
-              title="Refresh chain state"
+              title="Refresh world state"
             >
               <RefreshCw
                 className={cn("h-3 w-3", isLoadingWorld && "animate-spin")}
@@ -348,34 +505,182 @@ export default function WorldScreen() {
           </div>
         </div>
 
-        {/* Live World Activity Feed Popover ("What changed while you were away") */}
-        {activityDrawerOpen && (
-          <div className="absolute left-4 top-[198px] z-30 w-[320px] sm:w-[356px] max-h-[340px] flex flex-col rounded-2xl border border-white/[0.12] bg-[#101413]/96 shadow-panel backdrop-blur-md overflow-hidden">
+        {/* Settlement Visit Banner ("Inspect Another Builder's Realm Mode") */}
+        {visitedBuilderAddress && visitedBuilderStats && (
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-16 z-30 flex flex-wrap items-center gap-3 rounded-2xl border border-[#2DD4BF]/45 bg-[#0D1918]/95 px-4 py-2.5 text-xs shadow-panel backdrop-blur-md">
+            <div className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-[#2DD4BF]" />
+              <div>
+                <div className="font-bold text-ink-primary">
+                  Visiting Realm:{" "}
+                  <span className="text-[#2DD4BF]">
+                    {visitedBuilderRanking?.displayName ||
+                      shortenAddress(visitedBuilderAddress)}
+                  </span>
+                </div>
+                <div className="font-mono text-[10px] text-ink-secondary">
+                  {visitedBuilderStats.tilesClaimed} Tiles •{" "}
+                  {visitedBuilderStats.settlementsBuilt} Settlements (Max Lv.
+                  {visitedBuilderStats.maxSettlementLevel}) • +
+                  {visitedBuilderStats.woodPerHour}W / +
+                  {visitedBuilderStats.stonePerHour}S / +
+                  {visitedBuilderStats.foodPerHour}F per hr
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setVisitedBuilderAddress(null)}
+              className="rounded-lg border border-white/[0.12] bg-white/[0.06] px-2.5 py-1 text-[11px] font-semibold text-ink-primary hover:bg-white/[0.12]"
+            >
+              Exit Visit
+            </button>
+          </div>
+        )}
+
+        {/* Floating Drawer: Missions / Regional Rankings / World Feed */}
+        {activeDrawer && (
+          <div className="absolute left-4 top-[198px] z-30 w-[328px] sm:w-[372px] max-h-[390px] flex flex-col rounded-2xl border border-white/[0.12] bg-[#101413]/96 shadow-panel backdrop-blur-md overflow-hidden">
             <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
               <div>
                 <div className="text-xs font-bold text-ink-primary">
-                  Live World Activity Feed
+                  {activeDrawer === "missions" &&
+                    "Missions & World Challenges"}
+                  {activeDrawer === "rankings" &&
+                    "Regional Rankings & Settlement Visits"}
+                  {activeDrawer === "feed" && "Live World Activity Feed"}
                 </div>
                 <div className="text-[10px] text-ink-muted">
-                  Verified changes across all players on Robinhood Chain
+                  {activeDrawer === "missions" &&
+                    "Complete personal & regional objectives to advance your realm"}
+                  {activeDrawer === "rankings" &&
+                    "Inspect any builder's land & production without spending $WIF"}
+                  {activeDrawer === "feed" &&
+                    "Recent claims, harvests, structures, upgrades & Beacon support"}
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setActivityDrawerOpen(false)}
+                onClick={() => setActiveDrawer(null)}
                 className="rounded-md p-1 text-ink-muted hover:text-white"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
+
             <div className="flex-1 overflow-y-auto p-3.5">
-              {activities.length === 0 ? (
-                <p className="py-6 text-center text-xs text-ink-muted leading-relaxed">
-                  {isContractDeployed
-                    ? "No verified map changes recorded yet — claim the first tile in The Heartlands!"
-                    : "Genesis world preview: once WIFWorlds.sol is deployed in Phase B, live player settlements, upgrades, and Beacon milestones stream here."}
-                </p>
-              ) : (
+              {activeDrawer === "missions" && (
+                <ul className="space-y-2.5 text-xs">
+                  {missions.map((m) => {
+                    const pct = Math.min(
+                      100,
+                      Math.round((m.current / m.target) * 100)
+                    );
+                    return (
+                      <li
+                        key={m.id}
+                        className={cn(
+                          "rounded-xl border p-3 space-y-1.5",
+                          m.completed
+                            ? "border-emerald-500/35 bg-emerald-500/[0.08]"
+                            : "border-white/[0.07] bg-obsidian/70"
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-ink-primary flex items-center gap-1.5">
+                            {m.completed ? (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                            ) : (
+                              <Target className="h-3.5 w-3.5 text-crimson-accent shrink-0" />
+                            )}
+                            {m.title}
+                          </span>
+                          <span className="font-mono text-[10px] text-ink-secondary">
+                            {m.current}/{m.target}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-ink-muted leading-snug">
+                          {m.description}
+                        </p>
+                        <div className="h-1.5 w-full rounded-full bg-white/[0.07] overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all",
+                              m.completed
+                                ? "bg-emerald-400"
+                                : "bg-crimson-accent"
+                            )}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <div className="text-[10px] font-medium text-amber-300/90">
+                          Unlock: {m.rewardLabel}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+
+              {activeDrawer === "rankings" && (
+                <ul className="space-y-2 text-xs">
+                  {regionalRankings.map((r, idx) => {
+                    const isVisiting =
+                      visitedBuilderAddress?.toLowerCase() ===
+                      r.address.toLowerCase();
+                    return (
+                      <li
+                        key={r.address}
+                        className={cn(
+                          "rounded-xl border p-2.5 flex items-center justify-between gap-2",
+                          r.isCurrentPlayer
+                            ? "border-[#2DD4BF]/35 bg-[#2DD4BF]/[0.07]"
+                            : "border-white/[0.07] bg-obsidian/70"
+                        )}
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-[11px] font-bold text-crimson-accent">
+                              #{idx + 1}
+                            </span>
+                            <span className="font-bold text-ink-primary truncate">
+                              {r.displayName}
+                            </span>
+                            <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] text-ink-secondary">
+                              {r.activityScore} pts
+                            </span>
+                          </div>
+                          <div className="font-mono text-[10px] text-ink-muted mt-0.5">
+                            {r.settlementsBuilt} Settl (Lv.{r.maxSettlementLevel}
+                            ) • {r.structuresBuilt} Struct • +{r.woodPerHour}W/+
+                            {r.stonePerHour}S/+{r.foodPerHour}F/h
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            isVisiting
+                              ? setVisitedBuilderAddress(null)
+                              : handleVisitRealm(r.address)
+                          }
+                          className={cn(
+                            "shrink-0 inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors",
+                            isVisiting
+                              ? "border-[#2DD4BF] bg-[#2DD4BF]/20 text-[#2DD4BF]"
+                              : "border-white/[0.1] bg-white/[0.04] text-ink-secondary hover:text-white"
+                          )}
+                        >
+                          <Eye className="h-3 w-3" />
+                          <span>{isVisiting ? "Visiting" : "Visit"}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+
+              {activeDrawer === "feed" && (
                 <ul className="space-y-2.5 text-xs">
                   {activities.slice(0, 15).map((item) => (
                     <li
@@ -394,7 +699,7 @@ export default function WorldScreen() {
                           {item.kind === "settlement" &&
                             `founded Settlement at ${formatCoords(item.tileId ?? 0)}`}
                           {item.kind === "upgrade" &&
-                            `upgraded Hall Lv.${item.newLevel} at ${formatCoords(
+                            `upgraded Settlement to Lv.${item.newLevel} at ${formatCoords(
                               item.tileId ?? 0
                             )}`}
                           {item.kind === "structure" &&
@@ -403,21 +708,27 @@ export default function WorldScreen() {
                                 ? STRUCTURE_META[item.structureType].name
                                 : "Structure"
                             } at ${formatCoords(item.tileId ?? 0)}`}
+                          {item.kind === "harvest" &&
+                            `harvested +${item.resourcesAdded?.wood ?? 0}W / +${
+                              item.resourcesAdded?.stone ?? 0
+                            }S / +${item.resourcesAdded?.food ?? 0}F`}
                           {item.kind === "event" &&
                             `contributed ${formatWif(item.wifAmount, 0)} $WIF to Beacon`}
                           {item.kind === "region_unlock" &&
                             "unlocked The Wild Frontier!"}
                         </span>
                       </div>
-                      <a
-                        href={explorerTxUrl(item.txHash)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-ink-muted hover:text-white shrink-0"
-                        title="View on Blockscout"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
+                      {!item.isSimulated && (
+                        <a
+                          href={explorerTxUrl(item.txHash)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-ink-muted hover:text-white shrink-0"
+                          title="View on Blockscout"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -446,15 +757,15 @@ export default function WorldScreen() {
           tiles={tiles}
           selectedTileId={selectedTileId}
           onSelectTile={setSelectedTileId}
-          connectedAddress={address}
+          connectedAddress={visitedBuilderAddress ?? effectiveProfileAddress}
           beaconProgressRatio={eventProgressRatio}
           isRegionLocked={!isCurrentRegionUnlocked}
           regionName={activeRegion.name}
         />
       </div>
 
-      {/* RIGHT SIDEBAR: Civilization Progression + Tile Details + Strategic Actions */}
-      <aside className="w-full lg:w-[384px] xl:w-[412px] shrink-0 border-t lg:border-t-0 lg:border-l border-white/[0.08] bg-[#101413] flex flex-col overflow-y-auto">
+      {/* RIGHT SIDEBAR: Resource Economy + Progression + Tile Inspector + Strategic Actions */}
+      <aside className="w-full lg:w-[392px] xl:w-[420px] shrink-0 border-t lg:border-t-0 lg:border-l border-white/[0.08] bg-[#101413] flex flex-col overflow-y-auto">
         <div className="p-5 space-y-4 flex-1">
           {/* Mobile Region Switcher */}
           <div className="flex md:hidden items-center gap-1.5 rounded-xl border border-white/[0.08] bg-obsidian p-1">
@@ -479,6 +790,78 @@ export default function WorldScreen() {
             })}
           </div>
 
+          {/* In-Game Resource Economy Card (Wood, Stone, Food + Harvest CTA) */}
+          <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/92 backdrop-blur-md shadow-panel p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-secondary">
+                  Settlement Materials
+                </span>
+                <span className="ml-2 font-mono text-[10px] text-ink-muted">
+                  Cap {playerStats.storageCap}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleHarvestResources}
+                disabled={isHarvesting || playerStats.tilesClaimed === 0}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all",
+                  playerStats.tilesClaimed > 0
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 hover:bg-emerald-500/30"
+                    : "bg-white/[0.05] text-ink-muted cursor-not-allowed"
+                )}
+              >
+                <Sparkles className="h-3 w-3" />
+                <span>{isHarvesting ? "Harvesting..." : "Harvest Now"}</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-xl border border-[#D99B52]/25 bg-[#D99B52]/10 p-2.5">
+                <div className="flex items-center justify-between text-[10px] font-semibold text-[#D99B52]">
+                  <span className="flex items-center gap-1">
+                    <Trees className="h-3 w-3" />
+                    Wood
+                  </span>
+                  <span className="font-mono">+{playerStats.woodPerHour}/h</span>
+                </div>
+                <div className="font-mono text-base font-extrabold text-ink-primary mt-0.5">
+                  {Math.floor(playerStats.wood)}
+                </div>
+                <div className="text-[9px] text-ink-muted">Lumber Camp</div>
+              </div>
+
+              <div className="rounded-xl border border-slate-400/25 bg-slate-400/10 p-2.5">
+                <div className="flex items-center justify-between text-[10px] font-semibold text-slate-300">
+                  <span className="flex items-center gap-1">
+                    <Mountain className="h-3 w-3" />
+                    Stone
+                  </span>
+                  <span className="font-mono">+{playerStats.stonePerHour}/h</span>
+                </div>
+                <div className="font-mono text-base font-extrabold text-ink-primary mt-0.5">
+                  {Math.floor(playerStats.stone)}
+                </div>
+                <div className="text-[9px] text-ink-muted">Quarry</div>
+              </div>
+
+              <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-2.5">
+                <div className="flex items-center justify-between text-[10px] font-semibold text-amber-300">
+                  <span className="flex items-center gap-1">
+                    <Wheat className="h-3 w-3" />
+                    Food
+                  </span>
+                  <span className="font-mono">+{playerStats.foodPerHour}/h</span>
+                </div>
+                <div className="font-mono text-base font-extrabold text-ink-primary mt-0.5">
+                  {Math.floor(playerStats.food)}
+                </div>
+                <div className="text-[9px] text-ink-muted">Farm</div>
+              </div>
+            </div>
+          </div>
+
           {/* 5-Stage Personal Civilization Progression Card */}
           <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/92 backdrop-blur-md shadow-panel p-4 space-y-2.5">
             <div className="flex items-center justify-between">
@@ -490,7 +873,6 @@ export default function WorldScreen() {
               </span>
             </div>
 
-            {/* 5 Stage Step Bars */}
             <div className="grid grid-cols-5 gap-1">
               {([1, 2, 3, 4, 5] as const).map((step) => (
                 <div
@@ -510,25 +892,11 @@ export default function WorldScreen() {
             </p>
           </div>
 
-          {!isContractDeployed && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] p-2.5 text-[11px] leading-relaxed text-amber-200/90">
-              <Info className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-amber-200">
-                  Phase A Complete:
-                </span>{" "}
-                Progression rules & multi-region map locked. Ready for Phase B{" "}
-                <code className="font-mono text-amber-300">WIFWorlds.sol</code>{" "}
-                deployment.
-              </div>
-            </div>
-          )}
-
           {/* Selected Tile Header */}
           <div className="space-y-3 border-b border-white/[0.07] pb-4">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-ink-muted">
-                Tile Details
+                Tile Inspector
               </span>
               <span className="font-mono text-xs text-ink-muted">
                 #{selectedTile.id} • {formatCoords(selectedTile.id)}
@@ -538,7 +906,7 @@ export default function WorldScreen() {
             <div className="flex items-center gap-3.5">
               <IsometricTilePreview
                 tile={selectedTile}
-                connectedAddress={address}
+                connectedAddress={activePlayerAddr}
                 size="sm"
               />
               <div className="min-w-0 flex-1">
@@ -547,6 +915,9 @@ export default function WorldScreen() {
                 </h1>
                 <p className="text-xs text-ink-muted mt-0.5 truncate">
                   {getRegionLabel(selectedTile.id)}
+                </p>
+                <p className="text-[11px] text-amber-300/90 mt-0.5">
+                  {terrain.resourceAffinity}
                 </p>
               </div>
             </div>
@@ -560,23 +931,35 @@ export default function WorldScreen() {
                     Neutral
                   </span>
                 ) : (
-                  <a
-                    href={explorerAddressUrl(selectedTile.owner)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={cn(
-                      "inline-flex items-center gap-1 font-mono font-semibold hover:underline",
-                      isYours ? "text-[#2DD4BF]" : "text-crimson-accent"
+                  <div className="flex items-center gap-2">
+                    {!isYours && (
+                      <button
+                        type="button"
+                        onClick={() => handleVisitRealm(selectedTile.owner)}
+                        className="inline-flex items-center gap-1 rounded bg-[#2DD4BF]/15 px-2 py-0.5 text-[10px] font-semibold text-[#2DD4BF] hover:bg-[#2DD4BF]/25"
+                      >
+                        <Eye className="h-3 w-3" />
+                        Inspect Realm
+                      </button>
                     )}
-                  >
-                    {isYours ? "You" : shortenAddress(selectedTile.owner)}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
+                    <a
+                      href={explorerAddressUrl(selectedTile.owner)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "inline-flex items-center gap-1 font-mono font-semibold hover:underline",
+                        isYours ? "text-[#2DD4BF]" : "text-crimson-accent"
+                      )}
+                    >
+                      {isYours ? "You" : shortenAddress(selectedTile.owner)}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
                 )}
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-ink-muted">Settlement Hall</span>
+                <span className="text-ink-muted">Settlement Tier</span>
                 <span
                   className={cn(
                     "font-medium",
@@ -587,7 +970,10 @@ export default function WorldScreen() {
                 >
                   {selectedTile.settlementLevel > 0
                     ? SETTLEMENT_TIER_META[
-                        selectedTile.settlementLevel as 1 | 2 | 3
+                        Math.min(
+                          5,
+                          selectedTile.settlementLevel
+                        ) as SettlementLevel
                       ].name
                     : "None"}
                 </span>
@@ -604,7 +990,10 @@ export default function WorldScreen() {
                   )}
                 >
                   {selectedTile.structureType !== StructureType.None
-                    ? STRUCTURE_META[selectedTile.structureType].name
+                    ? `${STRUCTURE_META[selectedTile.structureType].name} (${
+                        STRUCTURE_META[selectedTile.structureType]
+                          .gameplayFunction
+                      })`
                     : "None"}
                 </span>
               </div>
@@ -622,7 +1011,7 @@ export default function WorldScreen() {
                 onClick={() => openActionModal("claim")}
                 className="text-[11px] font-semibold text-crimson-accent hover:underline"
               >
-                Full Build Panel →
+                Full Build & Economy Panel →
               </button>
             </div>
 
@@ -669,7 +1058,9 @@ export default function WorldScreen() {
                     playerStats.settlementsBuilt + 1
                   )}`}
                   costWif={nextSettlementCost}
-                  primary={Boolean(claimDisabledReason && !settlementDisabledReason)}
+                  primary={Boolean(
+                    claimDisabledReason && !settlementDisabledReason
+                  )}
                   disabledReason={settlementDisabledReason}
                   onClick={() => openActionModal("settlement")}
                 />
@@ -678,14 +1069,12 @@ export default function WorldScreen() {
                   <ActionRowButton
                     icon={ArrowUpCircle}
                     title={
-                      selectedTile.settlementLevel === 1
-                        ? "Upgrade to Stronghold (Lv.2)"
-                        : "Upgrade to Citadel (Lv.3)"
+                      selectedTile.settlementLevel >= MAX_SETTLEMENT_LEVEL
+                        ? "Sovereign Capital (Lv.5 Max)"
+                        : `Upgrade to ${SETTLEMENT_TIER_META[nextLevelForSelectedTile].name}`
                     }
                     costWif={
-                      selectedTile.settlementLevel === 1
-                        ? costs.upgradeToLv2
-                        : costs.upgradeToLv3
+                      SETTLEMENT_TIER_META[nextLevelForSelectedTile].costWif
                     }
                     primary={!upgradeDisabledReason}
                     disabledReason={upgradeDisabledReason}
@@ -695,10 +1084,14 @@ export default function WorldScreen() {
 
                 <ActionRowButton
                   icon={Hammer}
-                  title="Build Structure"
-                  costWif={costs.outpost}
+                  title="Build Production or Structure"
+                  costWif={costs.farm ?? costs.outpost}
                   costPrefix="from"
-                  primary={false}
+                  primary={Boolean(
+                    claimDisabledReason &&
+                      settlementDisabledReason &&
+                      !structureDisabledReason
+                  )}
                   disabledReason={structureDisabledReason}
                   onClick={() => openActionModal("structure")}
                 />
@@ -709,7 +1102,7 @@ export default function WorldScreen() {
           {/* Terrain Rules Info Card */}
           <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/92 backdrop-blur-md shadow-panel p-4 space-y-1.5">
             <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-muted">
-              Terrain & Building Suitability
+              Terrain & Resource Specialization
             </div>
             <div className="flex items-start gap-2.5">
               <span
@@ -801,17 +1194,19 @@ function ActionRowButton({
             primary && isAvailable
               ? "text-white"
               : isAvailable
-              ? "text-ink-primary"
+              ? "text-crimson-accent"
               : "text-ink-dim"
           )}
         >
           {costPrefix ? `${costPrefix} ` : ""}
-          {formatWif(costWif, 0)} $WIF
+          {formatWif(costWif, 2)} $WIF
         </span>
       </button>
 
       {disabledReason && (
-        <p className="px-1 text-[10.5px] text-ink-dim">{disabledReason}</p>
+        <p className="px-1.5 text-[10px] text-ink-dim leading-tight">
+          • {disabledReason}
+        </p>
       )}
     </div>
   );

@@ -15,6 +15,7 @@ contract WIFWorldsTest is Test {
     address public bob = address(0x4);
 
     function setUp() public {
+        vm.warp(1_700_000_000);
         vm.startPrank(owner);
         wif = new MockWIF();
         game = new WIFWorlds(address(wif), treasury);
@@ -61,6 +62,9 @@ contract WIFWorldsTest is Test {
 
         WIFWorlds.PlayerState memory ps = game.getPlayerState(alice);
         assertEq(ps.tilesClaimed, 1);
+        assertEq(ps.wood, 160);
+        assertEq(ps.stone, 120);
+        assertEq(ps.food, 140);
     }
 
     function test_ClaimTile_RevertWhenWaterOrLandmark() public {
@@ -155,8 +159,7 @@ contract WIFWorldsTest is Test {
         vm.expectRevert("Requires at least 1 Workshop");
         game.upgradeSettlement(9);
 
-        // Build workshop on tile 9 (or tile with settlement/structure slot)
-        // Let's claim tile 17 for workshop
+        // Claim tile 17 for workshop
         game.claimTile(17);
         game.buildStructure(17, 2); // Workshop
 
@@ -168,14 +171,64 @@ contract WIFWorldsTest is Test {
         vm.stopPrank();
     }
 
+    function test_ResourceProductionAndFiveSettlementLevels() public {
+        vm.startPrank(alice);
+        // Claim Forest (8), Plains (9), Hills (10)
+        game.claimTile(8);  // Forest
+        game.claimTile(9);  // Plains
+        game.claimTile(10); // Hills
+
+        // Build 1st Settlement on tile 9
+        game.buildSettlement(9);
+
+        // Build Lumber Camp (4) on Forest tile 8 (+45 Wood/hr)
+        game.buildStructure(8, 4);
+        // Build Quarry (5) on Hills tile 10 (+40 Stone/hr)
+        game.buildStructure(10, 5);
+
+        // Claim Plains tile 15 & build Farm (6) (+45 Food/hr)
+        game.claimTile(15);
+        game.buildStructure(15, 6);
+
+        // Claim Plains tile 17 & build Workshop (2)
+        game.claimTile(17);
+        game.buildStructure(17, 2);
+
+        // Advance time by 5 hours so production buildings fill storage
+        vm.warp(block.timestamp + 5 hours);
+        game.harvestResources();
+
+        WIFWorlds.PlayerState memory ps = game.getPlayerState(alice);
+        assertEq(ps.lumberCampsBuilt, 1);
+        assertEq(ps.quarriesBuilt, 1);
+        assertEq(ps.farmsBuilt, 1);
+        assertTrue(ps.wood >= 300);
+        assertTrue(ps.stone >= 250);
+        assertTrue(ps.food >= 300);
+
+        // Upgrade Settlement 9: Lv 1 -> Lv 2 -> Lv 3 -> Lv 4
+        game.upgradeSettlement(9); // Lv 2
+        game.upgradeSettlement(9); // Lv 3
+        game.upgradeSettlement(9); // Lv 4
+        assertEq(game.getTile(9).settlementLevel, 4);
+
+        // Contribute to Regional Event to unlock Lv 5 Sovereign Capital
+        game.contributeToEvent(1, 50 ether);
+        vm.warp(block.timestamp + 3 hours);
+        game.upgradeSettlement(9); // Lv 5!
+        assertEq(game.getTile(9).settlementLevel, 5);
+        assertEq(game.getPlayerState(alice).maxSettlementLevel, 5);
+        vm.stopPrank();
+    }
+
     function test_BeaconStructureElevationRule() public {
         vm.startPrank(alice);
-        game.claimTile(9);  // Forest
-        game.claimTile(11); // Hills
+        game.claimTile(9);  // Plains
+        game.claimTile(10); // Hills
         game.claimTile(1);  // Rocky
 
         game.buildSettlement(9);
-        game.buildStructure(11, 1); // Outpost
+        game.buildStructure(10, 1); // Outpost
         game.upgradeSettlement(9);  // Lv 2 Stronghold
 
         // Capacity is now 3 + 3 + 2 + 2 = 10. Claim tile 8 (Forest, no stronghold)
@@ -218,4 +271,3 @@ contract WIFWorldsTest is Test {
         assertEq(game.getTile(49).regionId, 1);
     }
 }
-

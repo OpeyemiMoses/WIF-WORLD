@@ -406,18 +406,76 @@ export default function GameRulesPage() {
           </div>
         </section>
 
-        {/* 5. BUILDINGS, STRUCTURES & COSTS TABLE */}
-        <section id="structures" className="space-y-6">
+        {/* 5. PHASE 1.1 RESOURCE ECONOMY (WOOD, STONE, FOOD) */}
+        <section id="economy" className="space-y-6">
           <div className="flex items-center gap-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-crimson/20 text-crimson-accent font-mono font-bold text-sm">
               04
             </span>
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">
-                Buildings, Upgrades &amp; In-Game Costs
+                In-Game Resource Economy: Wood, Stone &amp; Food
               </h2>
               <p className="text-xs text-ink-muted">
-                Tuned 8× lighter for active strategic play on Robinhood Chain
+                Buildings generate strategic in-game construction materials over time — not redeemable crypto tokens
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-[#D99B52]/50 transition-all">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#D99B52]">
+                  Wood • Construction Material
+                </span>
+                <span className="font-mono text-xs text-emerald-400">+45/hr Forest</span>
+              </div>
+              <h3 className="text-base font-bold text-white">Produced by Lumber Camps</h3>
+              <p className="text-xs text-ink-secondary leading-relaxed">
+                Felled timber used to construct Quarries, Farms, Frontier Outposts, Workshops, and Settlement Hall upgrades. Forests grant a +50% yield bonus (+45 Wood/hr vs +30/hr on Plains/Hills).
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-slate-400/50 transition-all">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Stone • Advanced Buildings
+                </span>
+                <span className="font-mono text-xs text-emerald-400">+40/hr Rocky/Hills</span>
+              </div>
+              <h3 className="text-base font-bold text-white">Produced by Quarries</h3>
+              <p className="text-xs text-ink-secondary leading-relaxed">
+                Cut granite and obsidian blocks excavated from mountain crags and highlands. Essential for Artisan Workshops, Signal Beacons, and upgrading Settlements from Level 2 to Level 5.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/[0.09] bg-[#111514]/88 backdrop-blur-md shadow-panel p-5 space-y-3 hover:border-amber-400/50 transition-all">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-300">
+                  Food • Settlement Development
+                </span>
+                <span className="font-mono text-xs text-emerald-400">+45/hr Plains</span>
+              </div>
+              <h3 className="text-base font-bold text-white">Produced by Farms</h3>
+              <p className="text-xs text-ink-secondary leading-relaxed">
+                Golden wheat harvested from irrigated Plains fields. Sustains logging crews in Lumber Camps, supports Signal Beacons, and fuels all 5 Settlement Level upgrades and expansion towns.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* 6. 5 SETTLEMENT LEVELS & 6 SPECIALIZED STRUCTURES TABLE */}
+        <section id="structures" className="space-y-6">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-crimson/20 text-crimson-accent font-mono font-bold text-sm">
+              05
+            </span>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
+                5 Settlement Levels &amp; 6 Production / Strategic Buildings
+              </h2>
+              <p className="text-xs text-ink-muted">
+                Combine $WIF and harvested Wood, Stone &amp; Food to advance your civilization
               </p>
             </div>
           </div>
@@ -426,154 +484,167 @@ export default function GameRulesPage() {
             <table className="w-full text-left text-xs">
               <thead className="border-b border-white/[0.08] bg-obsidian/60 text-ink-muted font-semibold">
                 <tr>
-                  <th className="py-3.5 px-4">Action / Building</th>
-                  <th className="py-3.5 px-4">Cost ($WIF)</th>
+                  <th className="py-3.5 px-4">Building / Settlement Tier</th>
+                  <th className="py-3.5 px-4">Cost ($WIF + Materials)</th>
                   <th className="py-3.5 px-4">Prerequisites</th>
-                  <th className="py-3.5 px-4">Capacity Effect</th>
-                  <th className="py-3.5 px-4">Activity Score</th>
+                  <th className="py-3.5 px-4">Gameplay Function &amp; Unlock</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.06] text-ink-secondary">
                 <tr className="hover:bg-white/[0.02]">
-                  <td className="py-3.5 px-4 font-bold text-white flex items-center gap-2">
-                    <Grid className="h-4 w-4 text-emerald-400 shrink-0" />
+                  <td className="py-3.5 px-4 font-bold text-white">
                     Claim Neutral Tile
                   </td>
                   <td className="py-3.5 px-4 font-mono font-bold text-crimson-accent">
                     6.25 $WIF
                   </td>
-                  <td className="py-3.5 px-4">Neutral land, within capacity</td>
-                  <td className="py-3.5 px-4">Consumes 1 claim slot</td>
-                  <td className="py-3.5 px-4 font-mono">+50 pts</td>
+                  <td className="py-3.5 px-4">Neutral claimable land</td>
+                  <td className="py-3.5 px-4 text-emerald-400">
+                    1st claim grants +160W / +120S / +140F starter cache
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-white/[0.02]">
                   <td className="py-3.5 px-4 font-bold text-white">
-                    <div className="flex items-center gap-2">
-                      <Castle className="h-4 w-4 text-gold shrink-0" />
-                      <div>
-                        <div>Hamlet (Settlement Lv. 1)</div>
-                        <div className="text-[10px] text-ink-dim">Timber Village &amp; Hearth</div>
-                      </div>
-                    </div>
+                    Lumber Camp (Production)
                   </td>
                   <td className="py-3.5 px-4 font-mono font-bold text-crimson-accent">
-                    25 $WIF <span className="text-[10px] text-ink-dim font-normal">(+6.25/prev)</span>
+                    10 $WIF + 15 Food
                   </td>
-                  <td className="py-3.5 px-4">Owned tile, Spacing ≥ 2 tiles</td>
-                  <td className="py-3.5 px-4 font-semibold text-emerald-400">
-                    +3 Max Tiles
+                  <td className="py-3.5 px-4">Forest, Plains, or Hills</td>
+                  <td className="py-3.5 px-4 text-[#D99B52] font-semibold">
+                    Produces Wood (+45/hr on Forest, +30/hr elsewhere)
                   </td>
-                  <td className="py-3.5 px-4 font-mono">+200 pts</td>
                 </tr>
 
                 <tr className="hover:bg-white/[0.02]">
                   <td className="py-3.5 px-4 font-bold text-white">
-                    <div className="flex items-center gap-2">
-                      <Castle className="h-4 w-4 text-amber-400 shrink-0" />
-                      <div>
-                        <div>Stronghold (Settlement Lv. 2)</div>
-                        <div className="text-[10px] text-ink-dim">Stone Keep &amp; Turrets</div>
-                      </div>
-                    </div>
+                    Quarry (Production)
                   </td>
                   <td className="py-3.5 px-4 font-mono font-bold text-crimson-accent">
-                    37.5 $WIF
+                    12.5 $WIF + 20 Wood
                   </td>
-                  <td className="py-3.5 px-4">Lv. 1 Hamlet, ≥ 3 tiles claimed</td>
-                  <td className="py-3.5 px-4 font-semibold text-emerald-400">
-                    +2 Max Tiles
+                  <td className="py-3.5 px-4">Rocky Crags, Hills, or Plains</td>
+                  <td className="py-3.5 px-4 text-slate-300 font-semibold">
+                    Produces Stone (+40/hr on Rocky/Hills, +25/hr on Plains)
                   </td>
-                  <td className="py-3.5 px-4 font-mono">+150 pts</td>
                 </tr>
 
                 <tr className="hover:bg-white/[0.02]">
                   <td className="py-3.5 px-4 font-bold text-white">
-                    <div className="flex items-center gap-2">
-                      <Crown className="h-4 w-4 text-crimson-accent shrink-0" />
-                      <div>
-                        <div>Citadel (Settlement Lv. 3)</div>
-                        <div className="text-[10px] text-ink-dim">Sovereign Grand Castle</div>
-                      </div>
-                    </div>
+                    Farm (Production)
                   </td>
                   <td className="py-3.5 px-4 font-mono font-bold text-crimson-accent">
-                    62.5 $WIF
+                    10 $WIF + 15 Wood
                   </td>
-                  <td className="py-3.5 px-4">Lv. 2 Keep, ≥ 6 tiles, 1 structure</td>
-                  <td className="py-3.5 px-4 font-semibold text-emerald-400">
-                    +2 Max Tiles
+                  <td className="py-3.5 px-4">Plains, Forest, or Hills</td>
+                  <td className="py-3.5 px-4 text-amber-300 font-semibold">
+                    Produces Food (+45/hr on Plains, +30/hr elsewhere)
                   </td>
-                  <td className="py-3.5 px-4 font-mono">+150 pts</td>
                 </tr>
 
                 <tr className="hover:bg-white/[0.02]">
                   <td className="py-3.5 px-4 font-bold text-white">
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-sky-400 shrink-0" />
-                      <div>
-                        <div>Frontier Outpost</div>
-                        <div className="text-[10px] text-ink-dim">Border Guard Watchtower</div>
-                      </div>
-                    </div>
+                    Workshop (Strategic)
                   </td>
                   <td className="py-3.5 px-4 font-mono font-bold text-crimson-accent">
-                    12.5 $WIF
+                    18.75 $WIF + 35W / 25S
                   </td>
-                  <td className="py-3.5 px-4">Owned tile, No existing building</td>
-                  <td className="py-3.5 px-4 font-semibold text-emerald-400">
-                    +2 Max Tiles
+                  <td className="py-3.5 px-4">Plains/Forest/Hills + Regional Hall</td>
+                  <td className="py-3.5 px-4">
+                    Uses materials for construction • +150 Storage Cap • Unlocks Lv. 3+
                   </td>
-                  <td className="py-3.5 px-4 font-mono">+150 pts</td>
                 </tr>
 
                 <tr className="hover:bg-white/[0.02]">
                   <td className="py-3.5 px-4 font-bold text-white">
-                    <div className="flex items-center gap-2">
-                      <Hammer className="h-4 w-4 text-amber-500 shrink-0" />
-                      <div>
-                        <div>Artisan Workshop</div>
-                        <div className="text-[10px] text-ink-dim">Blacksmith Furnace Mill</div>
-                      </div>
-                    </div>
+                    Outpost (Strategic)
                   </td>
                   <td className="py-3.5 px-4 font-mono font-bold text-crimson-accent">
-                    18.75 $WIF
+                    12.5 $WIF + 20 Wood
                   </td>
-                  <td className="py-3.5 px-4">Owned tile, No existing building</td>
-                  <td className="py-3.5 px-4 text-ink-dim">—</td>
-                  <td className="py-3.5 px-4 font-mono">+150 pts</td>
+                  <td className="py-3.5 px-4">Any claimed tile you own</td>
+                  <td className="py-3.5 px-4 text-emerald-400 font-semibold">
+                    +2 Territory Capacity • +5W/+5F per hr
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-white/[0.02]">
                   <td className="py-3.5 px-4 font-bold text-white">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-crimson-accent shrink-0" />
-                      <div>
-                        <div>Signal Beacon</div>
-                        <div className="text-[10px] text-ink-dim">Obsidian Monolith</div>
-                      </div>
-                    </div>
+                    Signal Beacon (Strategic)
                   </td>
                   <td className="py-3.5 px-4 font-mono font-bold text-crimson-accent">
-                    31.25 $WIF
+                    31.25 $WIF + 40S / 20F
                   </td>
-                  <td className="py-3.5 px-4">Owned Rocky or Highland tile</td>
-                  <td className="py-3.5 px-4 text-ink-dim">—</td>
-                  <td className="py-3.5 px-4 font-mono">+150 pts</td>
+                  <td className="py-3.5 px-4">Hills/Rocky or Keep Lv.2+</td>
+                  <td className="py-3.5 px-4">
+                    Links to Regional Projects • Unlocks Lv. 5 Sovereign Capital
+                  </td>
                 </tr>
 
-                <tr className="hover:bg-white/[0.02]">
-                  <td className="py-3.5 px-4 font-bold text-white flex items-center gap-2">
-                    <Flame className="h-4 w-4 text-crimson-accent shrink-0" />
-                    Monument Contribution
+                <tr className="hover:bg-white/[0.02] bg-white/[0.01]">
+                  <td className="py-3.5 px-4 font-bold text-emerald-300">
+                    Level 1 — Settlement Hall
                   </td>
                   <td className="py-3.5 px-4 font-mono font-bold text-crimson-accent">
-                    Custom (min 1 $WIF)
+                    25 $WIF (Slot 1)
                   </td>
-                  <td className="py-3.5 px-4">Any connected builder</td>
-                  <td className="py-3.5 px-4 text-emerald-400">Unlocks Region 1</td>
-                  <td className="py-3.5 px-4 font-mono">+100 pts/action</td>
+                  <td className="py-3.5 px-4">Owned tile, spacing ≥ 2</td>
+                  <td className="py-3.5 px-4">
+                    Basic structures • +3 Territory Cap • +200 Storage
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-white/[0.02] bg-white/[0.01]">
+                  <td className="py-3.5 px-4 font-bold text-emerald-300">
+                    Level 2 — Homestead Keep
+                  </td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-crimson-accent">
+                    31.25 $WIF + 30W/20S/25F
+                  </td>
+                  <td className="py-3.5 px-4">≥ 2 tiles &amp; ≥ 1 structure</td>
+                  <td className="py-3.5 px-4">
+                    More building slots • +2 Territory Cap • Unlocks Beacons &amp; 2nd Settlement
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-white/[0.02] bg-white/[0.01]">
+                  <td className="py-3.5 px-4 font-bold text-emerald-300">
+                    Level 3 — Stronghold Citadel
+                  </td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-crimson-accent">
+                    50 $WIF + 50W/45S/40F
+                  </td>
+                  <td className="py-3.5 px-4">Lv. 2 Keep + ≥ 1 Workshop</td>
+                  <td className="py-3.5 px-4">
+                    Advanced production (+25W/+20S/+25F/hr) • +2 Territory Cap
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-white/[0.02] bg-white/[0.01]">
+                  <td className="py-3.5 px-4 font-bold text-emerald-300">
+                    Level 4 — Grand Fortress
+                  </td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-crimson-accent">
+                    75 $WIF + 90W/80S/70F
+                  </td>
+                  <td className="py-3.5 px-4">Lv. 3 Citadel + ≥ 4 tiles &amp; ≥ 3 structures</td>
+                  <td className="py-3.5 px-4">
+                    Expansion settlement mastery (+35W/+30S/+35F/hr) • +2 Territory Cap
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-white/[0.02] bg-white/[0.01]">
+                  <td className="py-3.5 px-4 font-bold text-emerald-300">
+                    Level 5 — Sovereign Capital
+                  </td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-crimson-accent">
+                    100 $WIF + 140W/120S/110F
+                  </td>
+                  <td className="py-3.5 px-4">Lv. 4 Fortress + Signal Beacon or Event support</td>
+                  <td className="py-3.5 px-4">
+                    Regional projects leadership (+50W/+45S/+50F/hr) • +2 Territory Cap
+                  </td>
                 </tr>
               </tbody>
             </table>

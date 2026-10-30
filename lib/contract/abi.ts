@@ -130,11 +130,33 @@ export const WIF_WORLDS_ABI = [
           { name: "outpostsBuilt", type: "uint16" },
           { name: "workshopsBuilt", type: "uint16" },
           { name: "beaconsBuilt", type: "uint16" },
+          { name: "lumberCampsBuilt", type: "uint16" },
+          { name: "quarriesBuilt", type: "uint16" },
+          { name: "farmsBuilt", type: "uint16" },
           { name: "eventsContributed", type: "uint16" },
           { name: "maxSettlementLevel", type: "uint8" },
+          { name: "wood", type: "uint32" },
+          { name: "stone", type: "uint32" },
+          { name: "food", type: "uint32" },
+          { name: "woodPerHour", type: "uint32" },
+          { name: "stonePerHour", type: "uint32" },
+          { name: "foodPerHour", type: "uint32" },
+          { name: "lastResourceSync", type: "uint32" },
           { name: "totalEventWifContributed", type: "uint256" },
         ],
       },
+    ],
+  },
+  {
+    type: "function",
+    name: "getPendingResources",
+    stateMutability: "view",
+    inputs: [{ name: "player", type: "address" }],
+    outputs: [
+      { name: "wood", type: "uint32" },
+      { name: "stone", type: "uint32" },
+      { name: "food", type: "uint32" },
+      { name: "storageCap", type: "uint32" },
     ],
   },
   {
@@ -180,6 +202,13 @@ export const WIF_WORLDS_ABI = [
       { name: "completed", type: "bool" },
       { name: "active", type: "bool" },
     ],
+  },
+  {
+    type: "function",
+    name: "harvestResources",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
   },
   {
     type: "function",
@@ -265,6 +294,17 @@ export const STRUCTURE_BUILT_EVENT = {
     { name: "player", type: "address", indexed: true },
     { name: "structureType", type: "uint8", indexed: false },
     { name: "cost", type: "uint256", indexed: false },
+  ],
+} as const;
+
+export const RESOURCES_HARVESTED_EVENT = {
+  type: "event",
+  name: "ResourcesHarvested",
+  inputs: [
+    { name: "player", type: "address", indexed: true },
+    { name: "woodAdded", type: "uint32", indexed: false },
+    { name: "stoneAdded", type: "uint32", indexed: false },
+    { name: "foodAdded", type: "uint32", indexed: false },
   ],
 } as const;
 

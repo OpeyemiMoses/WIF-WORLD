@@ -1381,24 +1381,39 @@ export function buildWorldPropsMesh(
         addMedievalCottage(mb, tcx + 1.22, sampleIslandSurface(tcx + 1.22, tcz + 0.72, tileGrid).height, tcz + 0.72, 0.52, 0.35, 0.42, -0.6, [0.42, 0.25, 0.19], false);
         smokeSources.push({ x: tcx + 0.2, y: cy + 1.48, z: tcz - 0.1 });
       } else {
-        // Lv.3 CITADEL: Grand Sovereign Multi-Spire Castle Keep + Cathedral Wings + Outer Town
+        // Lv.3-5 CITADEL / GRAND FORTRESS / SOVEREIGN CAPITAL
+        const heightScale = lvl >= 5 ? 1.25 : lvl === 4 ? 1.12 : 1.0;
         // High Keep
-        addMedievalCottage(mb, tcx, cy + 0.1, tcz, 1.05, 1.32, 0.88, 0.15, factionRoof, true);
+        addMedievalCottage(mb, tcx, cy + 0.1, tcz, 1.05, 1.32 * heightScale, 0.88, 0.15, factionRoof, true);
         // Sovereign Central Spire Tower + Golden Crown Beacon
-        addCastleTurret(mb, tcx, cy + 0.95, tcz, 0.28, 1.15, factionRoof, true);
-        addFoliagePuff(mb, tcx, cy + 2.82, tcz, 0.11, 0.14, 0.11, 1.0, 0.8, 0.3, MAT_EMISSIVE_WARM, 1.0, 5.0);
+        addCastleTurret(mb, tcx, cy + 0.95 * heightScale, tcz, 0.28, 1.15 * heightScale, factionRoof, true);
+        addFoliagePuff(
+          mb,
+          tcx,
+          cy + 2.82 * heightScale,
+          tcz,
+          0.11 + (lvl - 3) * 0.03,
+          0.14 + (lvl - 3) * 0.04,
+          0.11 + (lvl - 3) * 0.03,
+          1.0,
+          lvl >= 5 ? 0.86 : 0.8,
+          lvl >= 5 ? 0.36 : 0.3,
+          MAT_EMISSIVE_WARM,
+          1.0,
+          5.0
+        );
 
-        const wallR = 1.08;
+        const wallR = lvl >= 4 ? 1.16 : 1.08;
         for (let c = 0; c < 4; c++) {
           const a = (c / 4) * Math.PI * 2 + 0.15 + Math.PI / 4;
           const tx = tcx + Math.cos(a) * wallR;
           const tz = tcz + Math.sin(a) * wallR;
-          addCastleTurret(mb, tx, cy + 0.06, tz, 0.25, 1.22, factionRoof, true);
+          addCastleTurret(mb, tx, cy + 0.06, tz, 0.25, 1.22 * heightScale, factionRoof, true);
 
           const na = ((c + 1) / 4) * Math.PI * 2 + 0.15 + Math.PI / 4;
           const mx = tcx + ((Math.cos(a) + Math.cos(na)) * 0.5) * wallR;
           const mz = tcz + ((Math.sin(a) + Math.sin(na)) * 0.5) * wallR;
-          addOrientedBox(mb, mx, cy + 0.06, mz, 0.72, 0.72, 0.13, -(a + Math.PI / 4), 0.52, 0.5, 0.47, MAT_STONE_WALL);
+          addOrientedBox(mb, mx, cy + 0.06, mz, 0.72, 0.72 * heightScale, 0.13, -(a + Math.PI / 4), 0.52, 0.5, 0.47, MAT_STONE_WALL);
         }
 
         // Bustling outer bailey houses
@@ -1412,7 +1427,7 @@ export function buildWorldPropsMesh(
             addMedievalCottage(mb, hx, hh, hz, 0.52, 0.36, 0.44, -ha, hIdx % 2 === 0 ? factionRoof : [0.45, 0.26, 0.19], hIdx < 2);
           }
         }
-        smokeSources.push({ x: tcx + 0.25, y: cy + 2.0, z: tcz });
+        smokeSources.push({ x: tcx + 0.25, y: cy + 2.0 * heightScale, z: tcz });
       }
 
       lights.push({
@@ -1427,7 +1442,7 @@ export function buildWorldPropsMesh(
     }
 
     // ========================================================================
-    // 4. SPECIALIZED STRUCTURES (Outpost, Workshop, Signal Beacon)
+    // 4. SPECIALIZED & PRODUCTION STRUCTURES
     // ========================================================================
     if (showStructures && tile.structureType !== StructureType.None) {
       const offX = tile.settlementLevel > 0 ? 1.25 : 0.0;
@@ -1457,6 +1472,62 @@ export function buildWorldPropsMesh(
         addTaperedCylinder(mb, sx, sy + 0.02, sz, 0.28, 0.12, 1.68, 8, 0.24, 0.2, 0.22, MAT_OBS_MONOLITH);
         addFoliagePuff(mb, sx, sy + 1.85, sz, 0.18, 0.25, 0.18, 1.0, 0.28, 0.34, MAT_EMISSIVE_CRIMSON, 1.0, 9.0);
         lights.push({ x: sx, y: sy + 1.85, z: sz, r: 1.0, g: 0.28, b: 0.35, intensity: 3.0 });
+      } else if (tile.structureType === StructureType.LumberCamp) {
+        // Sawmill Timber Cabin + Stacked Log Piles + Sawhorse Yard
+        addTaperedCylinder(mb, sx, sy - 0.2, sz, 0.88, 0.82, 0.22, 8, 0.34, 0.26, 0.18, MAT_BARK);
+        addMedievalCottage(mb, sx - 0.15, sy + 0.02, sz - 0.1, 0.74, 0.44, 0.56, 0.25, [0.52, 0.31, 0.18], true);
+        // Stacked timber logs pyramid
+        for (let rowIdx = 0; rowIdx < 3; rowIdx++) {
+          addOrientedBox(
+            mb,
+            sx + 0.46,
+            sy + 0.04 + rowIdx * 0.12,
+            sz + 0.22,
+            0.26 - rowIdx * 0.04,
+            0.11,
+            0.18,
+            0.25,
+            0.56,
+            0.38,
+            0.22,
+            MAT_BARK
+          );
+        }
+        lights.push({ x: sx, y: sy + 0.85, z: sz, r: 0.95, g: 0.65, b: 0.28, intensity: 1.9 });
+      } else if (tile.structureType === StructureType.Quarry) {
+        // Stone Quarry Terraced Pit + Timber Crane Rigging + Cut Granite Blocks
+        addTaperedCylinder(mb, sx, sy - 0.22, sz, 0.92, 0.84, 0.24, 8, 0.38, 0.37, 0.39, MAT_STONE_WALL);
+        // Cut stone block stacks
+        addOrientedBox(mb, sx - 0.32, sy + 0.02, sz + 0.22, 0.24, 0.28, 0.24, 0.15, 0.58, 0.57, 0.59, MAT_STONE_WALL);
+        addOrientedBox(mb, sx + 0.28, sy + 0.02, sz + 0.28, 0.2, 0.22, 0.2, -0.4, 0.52, 0.51, 0.54, MAT_STONE_WALL);
+        // Wooden Quarry Derrick / Crane mast & boom
+        addOrientedBox(mb, sx - 0.05, sy + 0.02, sz - 0.2, 0.08, 1.18, 0.08, 0.2, 0.46, 0.3, 0.18, MAT_BARK);
+        addOrientedBox(mb, sx + 0.22, sy + 0.98, sz - 0.1, 0.38, 0.07, 0.07, 0.2, 0.52, 0.34, 0.2, MAT_BARK);
+        // Mason shed
+        addMedievalCottage(mb, sx + 0.38, sy + 0.02, sz - 0.28, 0.48, 0.34, 0.42, -0.5, factionRoof, false);
+        lights.push({ x: sx, y: sy + 0.95, z: sz, r: 0.85, g: 0.72, b: 0.48, intensity: 1.9 });
+      } else if (tile.structureType === StructureType.Farm) {
+        // Agrarian Barn + Golden Wheat Rows
+        addTaperedCylinder(mb, sx, sy - 0.2, sz, 0.94, 0.88, 0.22, 8, 0.42, 0.36, 0.24, MAT_STONE_WALL);
+        addMedievalCottage(mb, sx - 0.28, sy + 0.02, sz - 0.22, 0.68, 0.46, 0.52, 0.1, [0.68, 0.24, 0.18], false);
+        // 3 Golden Wheat Crop Rows
+        for (let f = -1; f <= 1; f++) {
+          addOrientedBox(
+            mb,
+            sx + 0.34,
+            sy + 0.03,
+            sz + f * 0.24,
+            0.36,
+            0.16,
+            0.08,
+            0.1,
+            0.88,
+            0.68,
+            0.18,
+            MAT_GOLD_BRASS
+          );
+        }
+        lights.push({ x: sx, y: sy + 0.85, z: sz, r: 1.0, g: 0.76, b: 0.28, intensity: 2.0 });
       }
     }
   }

@@ -36,6 +36,7 @@ import {
   getRegionLabel,
   PROGRESSION_STAGES,
   SETTLEMENT_TIER_META,
+  SettlementLevel,
   STRUCTURE_META,
   StructureType,
   TERRAIN_META,
@@ -485,7 +486,10 @@ export function PlayerProfileView({
                               <div className="text-sm font-bold text-ink-primary">
                                 {
                                   SETTLEMENT_TIER_META[
-                                    (t.settlementLevel || 1) as 1 | 2 | 3
+                                    Math.min(
+                                      5,
+                                      t.settlementLevel || 1
+                                    ) as SettlementLevel
                                   ].name
                                 }{" "}
                                 {formatCoords(t.id)}
