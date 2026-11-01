@@ -84,7 +84,7 @@ If evaluating with a wallet funded with small amounts of ETH (for gas on Robinho
    - Watch your **Total Materials** (`Wood`, `Stone`, `Food`) accumulate in real time in the top resource ticker and sidebar cards.
    - Click **Harvest to Vault** to execute `harvestResources()` onchain (`0 $WIF` cost, gas only), permanently banking accrued field yields into your settlement vault.
 3. **Establish a Settlement & Construct Buildings:**
-   - On any tile you own, open the **Build & Upgrade Modal** to found a **Settlement** (`12.5 $WIF`), upgrade your Settlement Hall from **Lv. 1 (Hamlet)** to **Lv. 5 (Sovereign Capital)**, or construct **Lumber Camps**, **Quarries**, **Farms**, **Workshops**, **Outposts**, and **Signal Beacons**.
+   - On any tile you own, open the **Build & Upgrade Modal** to found a **Settlement** (`25 $WIF`), upgrade your Settlement Hall from **Lv. 1 (Hamlet)** to **Lv. 5 (Sovereign Capital)**, or construct **Lumber Camps**, **Quarries**, **Farms**, **Workshops**, **Outposts**, and **Signal Beacons**.
 4. **Contribute to Community World Events (`/events`):**
    - Contribute `$WIF` directly to the active World Event. When `currentAmount >= targetAmount`, the smart contract automatically marks the event completed, unlocks the target region onchain (`isRegionUnlocked[regionId] = true`), and activates the next World Event in sequence (`1 -> 2 -> 3 -> 4 -> 5`).
 
@@ -207,7 +207,7 @@ No single wallet can buy out the entire map at once. Maximum claimable tiles sca
 $$\text{MaxClaimableTiles} = 3 + (3 \times \text{Settlements}) + (2 \times \text{Upgrades}) + (2 \times \text{Outposts})$$
 
 ### 3. Settlement Progression (Levels 1 to 5) & Adjacency Rules
-- Each player can establish up to **3 Settlements** per region (`1st: 12.5 $WIF`, `2nd: 20 $WIF + 60W/40S/60F`, `3rd: 30 $WIF + 120W/90S/100F`).
+- Each player can establish up to **3 Settlements** per region (`1st: 25 $WIF`, `2nd: 43.75 $WIF`, `3rd: 62.5 $WIF`).
 - **Minimum Distance Rule:** A player's settlements within the same region must be at least **Manhattan distance $\ge 3$** apart (`|r1 - r2| + |c1 - c2| >= 3`), preventing cluster-spamming.
 - **5 Upgrade Tiers:**
   - **Lv. 1 Hamlet:** Base foundation (`+5/h Wood, +3/h Stone, +5/h Food`, `+200 Vault Cap`)

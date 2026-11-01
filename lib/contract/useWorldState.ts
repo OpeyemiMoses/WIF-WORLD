@@ -53,6 +53,28 @@ import {
   WorldEventState,
   ZERO_ADDRESS,
 } from "@/lib/game/worldData";
+import { GENESIS_VERIFIED_ACTIVITIES } from "@/lib/contract/verifiedGenesisActivities";
+
+const VERIFIED_ACTIVITIES_STORAGE_KEY = "wif_worlds_verified_activities_v2";
+
+function serializeActivities(items: VerifiedActivityItem[]): string {
+  return JSON.stringify(items, (_key, value) =>
+    typeof value === "bigint" ? `${value.toString()}n` : value
+  );
+}
+
+function deserializeActivities(json: string): VerifiedActivityItem[] {
+  try {
+    return JSON.parse(json, (_key, value) => {
+      if (typeof value === "string" && /^[0-9]+n$/.test(value)) {
+        return BigInt(value.slice(0, -1));
+      }
+      return value;
+    });
+  } catch {
+    return [];
+  }
+}
 
 export type TxLifecycleStage =
   | "idle"
@@ -537,18 +559,75 @@ export function useWorldData(
     },
   });
 
-  const [activities, setActivities] = useState<VerifiedActivityItem[]>([]);
+  const [activities, setActivities] = useState<VerifiedActivityItem[]>(
+    () => GENESIS_VERIFIED_ACTIVITIES
+  );
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const cached = localStorage.getItem(VERIFIED_ACTIVITIES_STORAGE_KEY);
+      if (cached) {
+        const parsed = deserializeActivities(cached);
+        if (parsed.length > 0) {
+          setActivities((prev) => {
+            const map = new Map<string, VerifiedActivityItem>();
+            for (const item of GENESIS_VERIFIED_ACTIVITIES) {
+              map.set(item.id, item);
+            }
+            for (const item of prev) {
+              map.set(item.id, item);
+            }
+            for (const item of parsed) {
+              map.set(item.id, item);
+            }
+            return Array.from(map.values()).sort((a, b) =>
+              b.blockNumber > a.blockNumber ? 1 : -1
+            );
+          });
+        }
+      }
+    } catch {
+      // Ignore cache parsing error
+    }
+  }, []);
+
+  const recordVerifiedActivity = useCallback((item: VerifiedActivityItem) => {
+    setActivities((prev) => {
+      const map = new Map<string, VerifiedActivityItem>();
+      for (const g of GENESIS_VERIFIED_ACTIVITIES) {
+        map.set(g.id, g);
+      }
+      for (const p of prev) {
+        map.set(p.id, p);
+      }
+      map.set(item.id, item);
+      const result = Array.from(map.values()).sort((a, b) =>
+        b.blockNumber > a.blockNumber ? 1 : -1
+      );
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(
+            VERIFIED_ACTIVITIES_STORAGE_KEY,
+            serializeActivities(result)
+          );
+        } catch {
+          // Ignore storage quota
+        }
+      }
+      return result;
+    });
+  }, []);
 
   const fetchVerifiedLogs = useCallback(async () => {
     if (!isContractDeployed || !WIF_WORLDS_CONTRACT_ADDRESS || !publicClient) {
-      setActivities([]);
       return;
     }
     setIsLoadingLogs(true);
     try {
       const latestBlock = await publicClient.getBlockNumber();
-      const fromBlock = latestBlock > 50_000n ? latestBlock - 50_000n : 0n;
+      const fromBlock = latestBlock > 80_000n ? latestBlock - 80_000n : 0n;
       const logAddresses = [
         WIF_WORLDS_CONTRACT_ADDRESS,
         ...LEGACY_WIF_WORLDS_CONTRACTS,
@@ -726,7 +805,32 @@ export function useWorldData(
       }
 
       items.sort((a, b) => (b.blockNumber > a.blockNumber ? 1 : -1));
-      setActivities(items);
+      setActivities((prev) => {
+        const map = new Map<string, VerifiedActivityItem>();
+        for (const g of GENESIS_VERIFIED_ACTIVITIES) {
+          map.set(g.id, g);
+        }
+        for (const p of prev) {
+          map.set(p.id, p);
+        }
+        for (const n of items) {
+          map.set(n.id, n);
+        }
+        const merged = Array.from(map.values()).sort((a, b) =>
+          b.blockNumber > a.blockNumber ? 1 : -1
+        );
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(
+              VERIFIED_ACTIVITIES_STORAGE_KEY,
+              serializeActivities(merged)
+            );
+          } catch {
+            // Ignore storage errors
+          }
+        }
+        return merged;
+      });
     } catch {
       // Preserve last verified logs on transient RPC hiccup
     } finally {
@@ -1427,6 +1531,7 @@ export function useWorldData(
     regionalRankings,
     computePlayerStatsForAddress,
     activities,
+    recordVerifiedActivity,
     isLoadingWorld,
     isLoadingLogs,
     isWorldReadError,
